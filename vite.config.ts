@@ -13,6 +13,8 @@ export default defineConfig(({ mode }) => ({
   ],
   define: {
     "process.env": {},
+    "process.browser": true,
+    "process.version": '"v16.0.0"',
     "global": "globalThis",
   },
   resolve: {
