@@ -20,6 +20,7 @@ import HowItWorksOptionC from './HowItWorksOptionC';
 import SystemOutcomesSection from './SystemOutcomesSection';
 import TestWithAnyIdeaCard from './TestWithAnyIdeaCard';
 import MultimodalAnalyzer from './MultimodalAnalyzer';
+import MetaLearningDashboard from './MetaLearningDashboard';
 
 
 
@@ -1693,6 +1694,12 @@ export default function LivingRoom() {
                         }
                     }))}
                 />
+
+                {/* 10. META-LEARNING ENGINE */}
+                <div className="mt-14 mb-14">
+                    <div className="text-xs tracking-[0.18em] text-indigo-400 uppercase mb-4">SECTION 10</div>
+                    <MetaLearningDashboard episodes={episodes} />
+                </div>
 
                 {/* 5. TEST WITH ANY IDEA */}
                 <TestWithAnyIdeaCard

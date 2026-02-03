@@ -11,6 +11,15 @@ import express from "express";
 import cors from "cors";
 import { runCycle } from "./runCycle";
 import { analyzeGameImage } from "./gemini-enhanced";
+import {
+    discoverPrimitiveCorrelations,
+    identifyLearningPatterns,
+    getStoredCorrelations,
+    getStoredInsights
+} from "./lib/meta-learning";
+import { evaluateWithConsensus } from "./lib/consensus-evaluation";
+import { predictQuality } from "./lib/predictive-quality";
+import { getNarrativeContinuity } from "./lib/contextual-memory";
 
 const app = express();
 app.use(cors());
@@ -23,7 +32,63 @@ app.get("/api/health", (_req, res) => {
         wandb_configured: !!process.env.WANDB_API_KEY,
         hf_configured: !!process.env.HF_API_KEY,
         sidecar_url: "http://localhost:5199",
+        version: "2.5-sophisticated"
     });
+});
+
+// ── meta-learning ─────────────────────────────────────────────────────────
+app.post("/api/meta-learn", async (req, res) => {
+    try {
+        const { action, episodes = [] } = req.body;
+        let result;
+
+        switch (action) {
+            case 'discover_correlations':
+                result = await discoverPrimitiveCorrelations(episodes);
+                break;
+            case 'identify_patterns':
+                result = await identifyLearningPatterns(episodes);
+                break;
+            case 'get_current':
+                result = {
+                    correlations: await getStoredCorrelations(),
+                    insights: await getStoredInsights()
+                };
+                break;
+            default:
+                return res.status(400).json({ error: "Unknown action" });
+        }
+        res.json({ success: true, result });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ── predictive-quality ─────────────────────────────────────────────────────
+app.post("/api/predict-quality", async (req, res) => {
+    try {
+        const { topic, primitives, context } = req.body;
+        const result = await predictQuality(topic, primitives, context);
+        res.json({ success: true, prediction: result });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ── consensus-eval ─────────────────────────────────────────────────────────
+app.post("/api/consensus-eval", async (req, res) => {
+    try {
+        const { script, topic, primitives } = req.body;
+        const startTime = Date.now();
+        const consensus = await evaluateWithConsensus(script, topic, primitives);
+        res.json({
+            success: true,
+            consensus,
+            latency_ms: Date.now() - startTime
+        });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // ── multimodal ─────────────────────────────────────────────────────────────
