@@ -10,7 +10,8 @@ import {
     serverTimestamp,
     setDoc,
 } from "firebase/firestore";
-import Plot from "react-plotly.js";
+// import Plot from "react-plotly.js";
+const Plot = React.lazy(() => import("react-plotly.js"));
 import { db } from "../lib/firebase";
 import { callHuggingFace } from "../lib/hf";
 import { callGemini } from "../lib/gemini";
@@ -1279,48 +1280,50 @@ export default function LivingRoom() {
                                     <span className="text-xs font-mono text-gray-500">QUALITY vs ISSUES</span>
                                 </div>
 
-                                <Plot
-                                    data={[
-                                        {
-                                            x: episodes.map((ep: any) => toNumberSafe(ep.episode_num, 0)),
-                                            y: episodes.map((ep: any) => toNumberSafe(ep.quality_score, 0)),
-                                            type: "scatter",
-                                            mode: "lines+markers",
-                                            name: "Quality Score",
-                                            line: { color: "#34d399", width: 2 },
-                                            marker: { size: 6, color: "#34d399" },
-                                        },
-                                        {
-                                            x: episodes.map((ep: any) => toNumberSafe(ep.episode_num, 0)),
-                                            y: episodes.map((ep: any) => toNumberSafe(ep.issues_count, 0)),
-                                            type: "scatter",
-                                            mode: "lines+markers",
-                                            name: "Issues Detected",
-                                            yaxis: "y2",
-                                            line: { color: "#fb7185", width: 2 },
-                                            marker: { size: 6, color: "#fb7185" },
-                                        },
-                                    ]}
-                                    layout={{
-                                        paper_bgcolor: "rgba(0,0,0,0)",
-                                        plot_bgcolor: "rgba(0,0,0,0)",
-                                        font: { color: "#666" },
-                                        xaxis: { title: { text: "EPISODE" }, gridcolor: "#222" },
-                                        yaxis: { title: { text: "QUALITY" }, gridcolor: "#222", range: [0, 100] },
-                                        yaxis2: {
-                                            title: { text: "ISSUES", font: { color: "#fb7185" } },
-                                            overlaying: "y",
-                                            side: "right",
-                                            gridcolor: "transparent",
-                                            range: [0, maxIssues],
-                                            tickfont: { color: "#fb7185" },
-                                        },
-                                        legend: { x: 0, y: 1.1, orientation: "h" },
-                                        margin: { l: 40, r: 40, t: 0, b: 40 },
-                                    }}
-                                    config={{ displayModeBar: false }}
-                                    style={{ width: "100%", height: "300px" }}
-                                />
+                                <React.Suspense fallback={<div className="h-[300px] flex items-center justify-center text-gray-500 font-mono text-xs">Loading Visualization Engine...</div>}>
+                                    <Plot
+                                        data={[
+                                            {
+                                                x: episodes.map((ep: any) => toNumberSafe(ep.episode_num, 0)),
+                                                y: episodes.map((ep: any) => toNumberSafe(ep.quality_score, 0)),
+                                                type: "scatter",
+                                                mode: "lines+markers",
+                                                name: "Quality Score",
+                                                line: { color: "#34d399", width: 2 },
+                                                marker: { size: 6, color: "#34d399" },
+                                            },
+                                            {
+                                                x: episodes.map((ep: any) => toNumberSafe(ep.episode_num, 0)),
+                                                y: episodes.map((ep: any) => toNumberSafe(ep.issues_count, 0)),
+                                                type: "scatter",
+                                                mode: "lines+markers",
+                                                name: "Issues Detected",
+                                                yaxis: "y2",
+                                                line: { color: "#fb7185", width: 2 },
+                                                marker: { size: 6, color: "#fb7185" },
+                                            },
+                                        ]}
+                                        layout={{
+                                            paper_bgcolor: "rgba(0,0,0,0)",
+                                            plot_bgcolor: "rgba(0,0,0,0)",
+                                            font: { color: "#666" },
+                                            xaxis: { title: { text: "EPISODE" }, gridcolor: "#222" },
+                                            yaxis: { title: { text: "QUALITY" }, gridcolor: "#222", range: [0, 100] },
+                                            yaxis2: {
+                                                title: { text: "ISSUES", font: { color: "#fb7185" } },
+                                                overlaying: "y",
+                                                side: "right",
+                                                gridcolor: "transparent",
+                                                range: [0, maxIssues],
+                                                tickfont: { color: "#fb7185" },
+                                            },
+                                            legend: { x: 0, y: 1.1, orientation: "h" },
+                                            margin: { l: 40, r: 40, t: 0, b: 40 },
+                                        }}
+                                        config={{ displayModeBar: false }}
+                                        style={{ width: "100%", height: "300px" }}
+                                    />
+                                </React.Suspense>
                             </div>
                         </>
                     )
