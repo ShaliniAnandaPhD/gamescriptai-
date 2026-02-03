@@ -1,0 +1,6 @@
+# Core dependencies
+requests>=2.31
+python-dotenv>=1.0
+
+# Neuron is installed from the cloned repo (see setup.sh step 1)
+# -e git+https://github.com/ShaliniAnandaPhD/Neuron.git#egg=neuron

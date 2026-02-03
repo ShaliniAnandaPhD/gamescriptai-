@@ -1,0 +1,276 @@
+                        {/* 7. LEARNING CURVE CHART */}
+                        {episodes.length > 0 && (
+                            <div className="bg-[#111] p-8 rounded border border-gray-800 mb-8">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-xl font-light text-white">Learning Velocity</h2>
+                                    <span className="text-xs font-mono text-gray-500">QUALITY vs ISSUES</span>
+                                </div>
+                                <Plot
+                                    data={[
+                                        {
+                                            x: episodes.map((ep: any) => ep.episode_num),
+                                            y: episodes.map((ep: any) => ep.quality_score),
+                                            type: 'scatter',
+                                            mode: 'lines+markers',
+                                            name: 'Quality',
+                                            line: { color: '#ffffff', width: 2 },
+                                            marker: { size: 6, color: '#ffffff' }
+                                        },
+                                        {
+                                            x: episodes.map((ep: any) => ep.episode_num),
+                                            y: episodes.map((ep: any) => ep.issues_count),
+                                            type: 'scatter',
+                                            mode: 'lines+markers',
+                                            name: 'Issues',
+                                            yaxis: 'y2',
+                                            line: { color: '#333333', width: 2 },
+                                            marker: { size: 6, color: '#333333' }
+                                        }
+                                    ]}
+                                    layout={{
+                                        paper_bgcolor: 'rgba(0,0,0,0)',
+                                        plot_bgcolor: 'rgba(0,0,0,0)',
+                                        font: { color: '#666' },
+                                        xaxis: { title: 'EPISODE', gridcolor: '#222' },
+                                        yaxis: { title: 'QUALITY', gridcolor: '#222', range: [0, 100] },
+                                        yaxis2: {
+                                            title: 'ISSUES',
+                                            overlaying: 'y',
+                                            side: 'right',
+                                            gridcolor: 'transparent',
+                                            range: [0, Math.max(...episodes.map((ep: any) => ep.issues_count), 5)]
+                                        },
+                                        legend: { x: 0, y: 1.1, orientation: 'h' },
+                                        margin: { l: 40, r: 40, t: 0, b: 40 }
+                                    }}
+                                    config={{ displayModeBar: false }}
+                                    style={{ width: '100%', height: '300px' }}
+                                />
+                            </div>
+                        )}
+
+                        {/* 8. EPISODE TIMELINE */}
+                        <div className="bg-[#111] p-8 rounded border border-gray-800 mb-8">
+                            <div className="flex items-center justify-between mb-8">
+                                <h2 className="text-xl font-light text-white">Full Learning History</h2>
+                                <span className="text-xs font-mono text-gray-500">COMPLETE TIMELINE</span>
+                            </div>
+
+                            {episodes.length > 0 ? (
+                                <div className="space-y-4">
+                                    <div className="bg-[#0a0a0a] p-4 rounded border border-gray-800">
+                                        <label className="block text-xs font-mono text-gray-500 mb-2 uppercase">
+                                            Select Historical Episode
+                                        </label>
+                                        <select
+                                            value={selectedEpisode}
+                                            onChange={(e) => setSelectedEpisode(Number(e.target.value))}
+                                            className="w-full bg-black border border-gray-800 rounded px-4 py-3 text-white focus:outline-none focus:border-gray-600 font-mono text-sm"
+                                        >
+                                            {episodes.slice().reverse().map((ep) => (
+                                                <option key={ep.episode_num} value={ep.episode_num}>
+                                                    EPISODE {ep.episode_num} • {ep.topic.substring(0, 50)}...
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Selected Episode Details */}
+                                    {(() => {
+                                        const episode = episodes.find(ep => ep.episode_num === selectedEpisode);
+                                        if (!episode) return null;
+
+                                        const isOptimized = episode.optimized;
+                                        const gatePassed = episode.metadata?.gate_passed;
+                                        const hasMutations = episode.metadata?.mutations && episode.metadata.mutations.length > 0;
+
+                                        return (
+                                            <div className={`mt-4 bg-[#0a0a0a] p-6 rounded border ${
+                                                isOptimized ? 'border-gray-600' : 'border-gray-800'
+                                            }`}>
+                                                {/* Header */}
+                                                <div className="flex items-start justify-between mb-6 border-b border-gray-800 pb-6">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <div className="text-xl font-light text-white">
+                                                                Episode {episode.episode_num}
+                                                            </div>
+                                                            {isOptimized && (
+                                                                <div className="px-2 py-1 bg-gray-900 border border-gray-700 rounded text-[10px] font-mono text-white animate-pulse">
+                                                                    SYSTEM EVOLVED
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-base text-gray-400 font-light mb-2">
+                                                            "{episode.topic}"
+                                                        </div>
+                                                        <div className="text-xs font-mono text-gray-600">
+                                                            {episode.timestamp && typeof episode.timestamp.toDate === 'function'
+                                                                ? episode.timestamp.toDate().toLocaleString()
+                                                                : 'Just now'}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="text-right">
+                                                        <div className="text-4xl font-light text-white mb-1">
+                                                            {episode.quality_score}
+                                                        </div>
+                                                        <div className="text-xs font-mono text-gray-500 uppercase">Quality Score</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Scores */}
+                                                <div className="grid grid-cols-3 gap-px bg-gray-800 rounded overflow-hidden border border-gray-800 mb-6">
+                                                    <div className="bg-[#0a0a0a] p-4 text-center">
+                                                        <div className="text-xs font-mono text-gray-500 mb-2 uppercase">Fact Check</div>
+                                                        <div className={`text-2xl font-light ${(episode.metadata?.fact_score || 0) >= 70 ? 'text-white' : 'text-gray-400'}`}>
+                                                            {episode.metadata?.fact_score || '-'}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="bg-[#0a0a0a] p-4 text-center">
+                                                        <div className="text-xs font-mono text-gray-500 mb-2 uppercase">Style Check</div>
+                                                        <div className={`text-2xl font-light ${(episode.metadata?.style_score || 0) >= 70 ? 'text-white' : 'text-gray-400'}`}>
+                                                            {episode.metadata?.style_score || '-'}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="bg-[#0a0a0a] p-4 text-center">
+                                                        <div className="text-xs font-mono text-gray-500 mb-2 uppercase">Gate Confidence</div>
+                                                        <div className={`text-2xl font-light ${gatePassed ? 'text-white' : 'text-gray-400'}`}>
+                                                            {Math.round(episode.metadata?.confidence || 0)}
+                                                        </div>
+                                                        <div className="text-[10px] font-mono text-gray-600 mt-1">
+                                                            {gatePassed ? 'PASSED' : 'FAILED'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Issues Detected */}
+                                                {episode.issues_count > 0 && (
+                                                    <div className="mb-6 p-4 bg-red-900/10 border border-red-500/20 rounded">
+                                                        <div className="flex items-center gap-2 font-medium text-red-500 mb-2 text-sm">
+                                                            <span>⚠️</span>
+                                                            <span>{episode.issues_count} Issue(s) Detected</span>
+                                                        </div>
+                                                        <div className="text-xs text-red-400 pl-6 leading-relaxed">
+                                                            {episode.metadata?.fact_score < 70 && <div className="mb-1">• Unverified claims or hallucinations</div>}
+                                                            {episode.metadata?.style_score < 70 && <div>• Hyperbolic language or tone issues</div>}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Primitive Evolution */}
+                                                {hasMutations && (
+                                                    <div className="p-6 bg-gray-900/30 border border-gray-800 rounded">
+                                                        <div className="flex items-center gap-3 mb-6">
+                                                            <div className="text-xl">🧬</div>
+                                                            <div>
+                                                                <div className="text-sm font-medium text-white">System Evolution Event</div>
+                                                                <div className="text-xs text-gray-500">BEHAVIORAL PRIMITIVES UPDATED</div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-4">
+                                                            {episode.metadata.mutations.map((mutation: any, idx: number) => (
+                                                                <div key={idx} className="bg-[#0a0a0a] border border-gray-800 p-4 rounded">
+                                                                    <div className="flex items-start justify-between mb-3">
+                                                                        <div className="font-mono text-xs text-gray-300">
+                                                                            {mutation.primitive_name}
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-xs text-gray-500">{mutation.old_weight.toFixed(2)}</span>
+                                                                            <span className="text-gray-600">→</span>
+                                                                            <span className="text-xs text-white font-medium">{mutation.new_weight.toFixed(2)}</span>
+                                                                            <span className="text-[10px] text-green-500 bg-green-900/10 px-1 rounded ml-1">
+                                                                                +{mutation.delta.toFixed(2)}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-xs text-gray-500 mb-2 pl-2 border-l-2 border-gray-800">
+                                                                        {mutation.reason}
+                                                                    </div>
+                                                                    <div className="text-[10px] text-gray-600 bg-gray-900/30 p-2 rounded mt-2">
+                                                                        IMPACT: Increased enforcement weight for future generations.
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <div className="mt-4 pt-4 border-t border-gray-800">
+                                                            <div className="text-xs text-gray-500 leading-relaxed">
+                                                                <span className="text-gray-400 font-medium">Auto-Correction:</span> System detected failures and autonomously updated its own configuration.
+                                                                Changes are persisted to Redis and will affect all future episodes.
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
+
+                                </div>
+                            ) : (
+                                <div className="text-center text-gray-500 py-12">
+                                    No episodes yet. Use test scenarios above to generate episodes.
+                                </div>
+                            )}
+
+                            {episodes.length >= 3 && (
+                                <div className="mt-8 pt-8 border-t border-gray-800">
+                                    <div className="flex items-start gap-4">
+                                        <div className="text-2xl opacity-50">∞</div>
+                                        <div className="flex-1">
+                                            <div className="font-light text-white text-lg mb-1">Autonomous Optimization</div>
+                                            <div className="text-sm text-gray-500 space-y-2">
+                                                <p>
+                                                    Unlike static models, this agent learns from every failure. The update loop runs in milliseconds on Redis,
+                                                    adjusting behavioral weights without expensive fine-tuning.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 9. LEARNING INSIGHTS */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div className="bg-[#111] p-6 rounded border border-gray-800">
+                                <div className="text-xs font-mono text-gray-500 mb-2 uppercase">Learning Velocity</div>
+                                <div className="text-4xl font-light text-white mb-2">
+                                    +{episodes.length >= 3
+                                        ? ((episodes[episodes.length - 1].quality_score +
+                                            episodes[episodes.length - 2].quality_score +
+                                            episodes[episodes.length - 3].quality_score) / 3 -
+                                            (episodes[0].quality_score + (episodes[1]?.quality_score || 0) + (episodes[2]?.quality_score || 0)) / 3).toFixed(1)
+                                        : '0.0'}
+                                </div>
+                                <div className="text-xs text-gray-600">quality improvement (avg)</div>
+                            </div>
+
+                            <div className="bg-[#111] p-6 rounded border border-gray-800">
+                                <div className="text-xs font-mono text-gray-500 mb-2 uppercase">System Mutations</div>
+                                <div className="text-4xl font-light text-white mb-2">
+                                    {Object.values(primitives).filter((p: any) => p.created_by === 'meta_optimizer').length}
+                                </div>
+                                <div className="text-xs text-gray-600">autonomous rule updates</div>
+                            </div>
+
+                            <div className="bg-[#111] p-6 rounded border border-gray-800">
+                                <div className="text-xs font-mono text-gray-500 mb-2 uppercase">Trajectory</div>
+                                <div className="text-4xl font-light text-white mb-2">
+                                    {episodes.length >= 5 &&
+                                        episodes.slice(-3).reduce((sum, ep: any) => sum + ep.quality_score, 0) / 3 >
+                                        episodes.slice(0, 3).reduce((sum, ep: any) => sum + ep.quality_score, 0) / 3
+                                        ? 'Positive'
+                                        : 'Stable'}
+                                </div>
+                                <div className="text-xs text-gray-600">performance trend</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+            );
+}
