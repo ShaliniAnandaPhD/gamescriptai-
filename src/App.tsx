@@ -43,9 +43,16 @@ class ErrorBoundary extends React.Component<
 }
 
 function App() {
+  React.useEffect(() => {
+    console.log("🚀 App component mounted successfully");
+  }, []);
+
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-background text-foreground">
+      <div className="min-h-screen bg-background text-foreground relative">
+        <div className="absolute top-0 left-0 p-1 text-[8px] text-gray-800 opacity-20 pointer-events-none">
+          V1.0.1-DEPLOY-CHECK
+        </div>
         <LivingNewsroom />
       </div>
     </ErrorBoundary>

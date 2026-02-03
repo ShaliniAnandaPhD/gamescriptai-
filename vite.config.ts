@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => ({
   ],
   define: {
     "process.env": {},
+    "global": "globalThis",
   },
   resolve: {
     alias: {
