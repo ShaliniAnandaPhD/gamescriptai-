@@ -35,19 +35,19 @@ export default function MetaLearningDashboard({ episodes }: MetaLearningDashboar
     return (
         <div className="bg-[#0a0a0a] border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
             {/* Header */}
-            <div className="bg-gray-900/50 p-6 border-b border-gray-800 flex items-center justify-between">
+            <div className="bg-gray-900/80 backdrop-blur-md p-6 border-b border-gray-800 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                        <Brain className="w-6 h-6 text-indigo-400 animate-pulse" />
+                    <div className="w-10 h-10 rounded-lg bg-gemini-purple/10 flex items-center justify-center border border-gemini-purple/20">
+                        <Brain className="w-6 h-6 text-gemini-purple animate-pulse" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-medium text-white tracking-tight">Meta-Learning Engine</h2>
-                        <p className="text-xs text-gray-500 font-mono uppercase tracking-widest mt-1">Version 2.5 Sophistication</p>
+                        <h2 className="text-2xl font-bold text-white tracking-tight">Meta-Learning Engine</h2>
+                        <p className="text-[10px] text-gray-500 font-mono uppercase tracking-[0.2em] mt-1">VERSION 2.5 SOPHISTICATION</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
-                    <Activity className="w-3 h-3 text-green-400" />
-                    <span className="text-[10px] font-mono text-green-400">ONLINE</span>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-900/20 border border-green-600/30 rounded-full">
+                    <Activity className="w-3.5 h-3.5 text-green-400" />
+                    <span className="text-[10px] font-bold text-green-400 tracking-wider">ONLINE</span>
                 </div>
             </div>
 
@@ -56,25 +56,31 @@ export default function MetaLearningDashboard({ episodes }: MetaLearningDashboar
                 <button
                     onClick={() => runAnalysis('discover_correlations')}
                     disabled={loading || episodes.length < 5}
-                    className="group relative flex flex-col items-start p-4 bg-gray-900/30 hover:bg-gray-900/60 border border-gray-800 hover:border-indigo-500/50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="group relative flex flex-col items-start p-6 bg-gray-900/50 border-2 border-gemini-purple/30 hover:border-gemini-purple rounded-xl transition-all hover:shadow-lg hover:shadow-gemini-purple/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <div className="flex items-center gap-3 mb-2">
-                        <Network className="w-5 h-5 text-indigo-400" />
-                        <span className="font-medium text-gray-200">Discover Correlations</span>
+                        <Network className="w-6 h-6 text-gemini-purple group-hover:scale-110 transition-transform" />
+                        <span className="font-semibold text-gray-200">Discover Correlations</span>
                     </div>
-                    <p className="text-xs text-gray-500 text-left">Map how primitives influence each other across ${episodes.length} episodes.</p>
+                    <p className="text-sm text-gray-400 text-left">Map how primitives influence each other across {episodes.length} episodes.</p>
+                    <div className="mt-3 text-[10px] text-gemini-purple font-medium uppercase tracking-wider">
+                        Powered by Gemini 3 Pro →
+                    </div>
                 </button>
 
                 <button
                     onClick={() => runAnalysis('identify_patterns')}
                     disabled={loading || episodes.length < 5}
-                    className="group relative flex flex-col items-start p-4 bg-gray-900/30 hover:bg-gray-900/60 border border-gray-800 hover:border-emerald-500/50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="group relative flex flex-col items-start p-6 bg-gray-900/50 border-2 border-gemini-blue/30 hover:border-gemini-blue rounded-xl transition-all hover:shadow-lg hover:shadow-gemini-blue/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <div className="flex items-center gap-3 mb-2">
-                        <TrendingUp className="w-5 h-5 text-emerald-400" />
-                        <span className="font-medium text-gray-200">Identify Patterns</span>
+                        <TrendingUp className="w-6 h-6 text-gemini-blue group-hover:scale-110 transition-transform" />
+                        <span className="font-semibold text-gray-200">Identify Patterns</span>
                     </div>
-                    <p className="text-xs text-gray-500 text-left">Extract success patterns and configuration guardrails.</p>
+                    <p className="text-sm text-gray-400 text-left">Extract success patterns and configuration guardrails.</p>
+                    <div className="mt-3 text-[10px] text-gemini-blue font-medium uppercase tracking-wider">
+                        AI-driven insights →
+                    </div>
                 </button>
             </div>
 

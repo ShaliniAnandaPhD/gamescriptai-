@@ -21,6 +21,7 @@ import SystemOutcomesSection from './SystemOutcomesSection';
 import TestWithAnyIdeaCard from './TestWithAnyIdeaCard';
 import MultimodalAnalyzer from './MultimodalAnalyzer';
 import MetaLearningDashboard from './MetaLearningDashboard';
+import { Sparkles, Activity } from 'lucide-react';
 
 
 
@@ -281,13 +282,13 @@ const STATIC_HISTORY = [
     },
     {
         id: 23,
-        title: "Mistral Large 3 vs. GPT-5: The Coding Test",
+        title: "Gemini 3 Flash vs. GPT-5: The Coding Test",
         topicBase: "LLM Benchmarks",
         timestamp: "2026-01-31T18:45:00.000Z",
         status: "FAIL",
         score: 78,
         primitive_action: "fact_verification 🛡️",
-        redis_op: "LPUSH failures:math_logic 'Mistral Benchmark Calculation Error'",
+        redis_op: "LPUSH failures:math_logic 'Gemini Benchmark Calculation Error'",
         issues: ["Math error in benchmark average"],
     },
     {
@@ -1026,16 +1027,19 @@ export default function LivingRoom() {
                 {/* 1. HEADER */}
                 <div className="mb-12 border-b border-gray-800 pb-12">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                        <div>
-                            <div className="text-blue-500 font-mono text-xs mb-2 tracking-widest uppercase">
-                                Section 1: System Status
+                        <div className="flex items-center gap-4">
+                            <Sparkles className="w-12 h-12 text-gemini-blue animate-pulse-gemini" />
+                            <div>
+                                <div className="text-gemini-blue font-mono text-[10px] mb-1 tracking-[0.2em] uppercase font-bold">
+                                    Section 1: Neural Status
+                                </div>
+                                <h1 className="text-7xl font-black tracking-tighter bg-gradient-to-r from-gemini-blue via-gemini-purple to-gemini-cyan bg-clip-text text-transparent mb-1 italic">
+                                    GAMESCRIPT AI
+                                </h1>
+                                <p className="text-xl text-gray-500 font-light tracking-wide">
+                                    Self-Evolving Sports Broadcasting • <span className="text-gemini-blue/80 font-medium">Powered by Gemini 3</span>
+                                </p>
                             </div>
-                            <h1 className="text-6xl font-black tracking-tighter text-white mb-2 italic">
-                                LIVING NEWSROOM
-                            </h1>
-                            <p className="text-xl text-gray-500 font-light">
-                                Self Optimizing Multi Agent Podcast System
-                            </p>
                         </div>
 
                         <div className="flex items-center gap-2 text-xs font-mono text-gray-600 bg-gray-900/50 w-fit px-3 py-1 rounded-full border border-gray-800">

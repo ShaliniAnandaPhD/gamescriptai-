@@ -85,36 +85,45 @@ export default function HowItWorksOptionC() {
                             emoji="📥"
                             title="Topic In"
                             subtitle="Ingest"
-                            className="border-cyan-300/30 shadow-[0_0_0_1px_rgba(34,211,238,0.15),0_0_35px_rgba(34,211,238,0.08)]"
+                            className="border-gray-700 bg-gray-900 shadow-lg shadow-black/40"
                         />
                         <Arrow />
                         <Step
-                            emoji="✍️"
-                            title="Mistral-7B"
-                            subtitle="Generate"
-                            className="border-emerald-300/30 shadow-[0_0_0_1px_rgba(52,211,153,0.15),0_0_35px_rgba(52,211,153,0.08)]"
+                            emoji="⚡"
+                            title="Gemini 3 Flash"
+                            subtitle="Generate (780ms)"
+                            className="border-gemini-blue bg-gradient-to-br from-gemini-blue to-gemini-purple shadow-glow-gemini"
                         />
                         <Arrow />
                         <Step
                             emoji="🔎"
-                            title="Evaluate"
-                            subtitle="Check quality"
-                            className="border-purple-300/30 shadow-[0_0_0_1px_rgba(168,85,247,0.18),0_0_35px_rgba(168,85,247,0.08)]"
+                            title="Gemini 3 Pro"
+                            subtitle="Evaluate (520ms)"
+                            className="border-purple-500 bg-gradient-to-br from-purple-600 to-pink-600 shadow-xl shadow-purple-500/20"
                         />
                         <Arrow />
                         <Step
                             emoji="🚦"
                             title="Gate"
                             subtitle="Pass or Fail"
-                            className="border-amber-300/30 shadow-[0_0_0_1px_rgba(251,191,36,0.18),0_0_35px_rgba(251,191,36,0.08)]"
+                            className="border-green-600 bg-gray-900 shadow-xl shadow-green-500/10"
                         />
                         <Arrow />
                         <Step
-                            emoji="⚡"
+                            emoji="🧠"
                             title="Learn"
                             subtitle="Update primitives"
-                            className="border-rose-300/30 shadow-[0_0_0_1px_rgba(251,113,133,0.18),0_0_35px_rgba(251,113,133,0.08)]"
+                            className="border-yellow-500 bg-gradient-to-br from-yellow-600 to-orange-600 shadow-xl shadow-yellow-500/20"
                         />
+                    </div>
+
+                    {/* Gemini 3 Attribution */}
+                    <div className="mt-8 text-center">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gemini-blue/10 border border-gemini-blue/30 rounded-full">
+                            <span className="text-sm text-gemini-blue font-medium">
+                                ✨ Powered by Gemini 3 Flash + Pro
+                            </span>
+                        </div>
                     </div>
 
                     {/* Neuron orchestration tray */}

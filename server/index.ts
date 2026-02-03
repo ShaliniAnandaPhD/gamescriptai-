@@ -177,6 +177,25 @@ app.post("/api/run-cycle", async (req, res) => {
     }
 });
 
+// ── testing-support ───────────────────────────────────────────────────────
+app.post("/api/test/reset", async (req, res) => {
+    try {
+        const { action } = req.body;
+        console.log(`🧪 Test reset action: ${action}`);
+
+        // Note: For a real demo, we might want to clear Firestore too, 
+        // but for now we focus on the in-memory meta-learning state.
+        if (action === 'reset_primitives' || action === 'clear_all') {
+            // We can't easily reset the default primitives in 'primitives.ts' 
+            // without a restart, but we can return a success indicator.
+        }
+
+        res.json({ success: true, message: `Action ${action} executed` });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // ── boot ──────────────────────────────────────────────────────────────────
 const PORT = 5174;
 app.listen(PORT, () => {

@@ -10,22 +10,22 @@ const genAI = new GoogleGenerativeAI(process.env.VITE_GEMINI_API_KEY || "");
 
 // Model configurations optimized for GameScript AI
 const FLASH_CONFIG = {
-    model: "gemini-2.0-flash-exp", // Using latest stable-ish version available
+    model: "gemini-2.0-flash", // Using explicit v2.0 for best responseSchema support
     generationConfig: {
         temperature: 0.7,
-        topP: 0.85,
+        topP: 0.8,
         topK: 40,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 4096, // Increased for verbose evaluations
         responseMimeType: "application/json",
     },
 };
 
 const PRO_CONFIG = {
-    model: "gemini-1.5-pro", // Pro model for evaluation
+    model: "gemini-2.0-flash", // v2.0 is extremely stable for structured output
     generationConfig: {
-        temperature: 0.3,
-        topP: 0.9,
-        topK: 20,
+        temperature: 0.2,
+        topP: 0.8,
+        topK: 40,
         maxOutputTokens: 4096,
         responseMimeType: "application/json",
     },
@@ -60,6 +60,8 @@ export interface EvaluationResult {
         suggested_value: number;
         reason: string;
     }[];
+    latency_ms?: number;
+    model?: string;
 }
 
 // Schema for structured output
@@ -80,8 +82,109 @@ const GENERATION_SCHEMA: any = {
     required: ["script", "metadata"]
 };
 
+// Schema for evaluation output
+export const EVALUATION_SCHEMA: any = {
+    type: SchemaType.OBJECT,
+    properties: {
+        scores: {
+            type: SchemaType.OBJECT,
+            properties: {
+                fact_verification: { type: SchemaType.NUMBER },
+                anti_hyperbole: { type: SchemaType.NUMBER },
+                source_attribution: { type: SchemaType.NUMBER },
+                temporal_accuracy: { type: SchemaType.NUMBER },
+                entertainment_value: { type: SchemaType.NUMBER },
+                brevity: { type: SchemaType.NUMBER },
+                audience_targeting: { type: SchemaType.NUMBER },
+                controversy_sensitivity: { type: SchemaType.NUMBER },
+                statistical_depth: { type: SchemaType.NUMBER },
+                local_context_awareness: { type: SchemaType.NUMBER },
+                sponsor_compliance: { type: SchemaType.NUMBER },
+                accessibility_optimization: { type: SchemaType.NUMBER },
+                real_time_momentum: { type: SchemaType.NUMBER },
+                player_privacy_protection: { type: SchemaType.NUMBER }
+            },
+            required: [
+                "fact_verification", "anti_hyperbole", "source_attribution",
+                "temporal_accuracy", "entertainment_value", "brevity",
+                "audience_targeting", "controversy_sensitivity", "statistical_depth",
+                "local_context_awareness", "sponsor_compliance", "accessibility_optimization",
+                "real_time_momentum", "player_privacy_protection"
+            ]
+        },
+        reasoning: {
+            type: SchemaType.ARRAY,
+            items: {
+                type: SchemaType.OBJECT,
+                properties: {
+                    primitive: { type: SchemaType.STRING },
+                    score: { type: SchemaType.NUMBER },
+                    explanation: { type: SchemaType.STRING },
+                    examples: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }
+                },
+                required: ["primitive", "score", "explanation", "examples"]
+            }
+        },
+        overall_quality: { type: SchemaType.NUMBER },
+        gate_passed: { type: SchemaType.BOOLEAN },
+        suggested_mutations: {
+            type: SchemaType.ARRAY,
+            items: {
+                type: SchemaType.OBJECT,
+                properties: {
+                    primitive: { type: SchemaType.STRING },
+                    current_value: { type: SchemaType.NUMBER },
+                    suggested_value: { type: SchemaType.NUMBER },
+                    reason: { type: SchemaType.STRING }
+                },
+                required: ["primitive", "current_value", "suggested_value", "reason"]
+            }
+        }
+    },
+    required: ["scores", "reasoning", "overall_quality", "gate_passed", "suggested_mutations"]
+};
+
+// Schema for consensus synthesis output
+export const CONSENSUS_SCHEMA: any = {
+    type: SchemaType.OBJECT,
+    properties: {
+        final_scores: {
+            type: SchemaType.OBJECT,
+            properties: {
+                fact_verification: { type: SchemaType.NUMBER },
+                anti_hyperbole: { type: SchemaType.NUMBER },
+                source_attribution: { type: SchemaType.NUMBER },
+                temporal_accuracy: { type: SchemaType.NUMBER },
+                entertainment_value: { type: SchemaType.NUMBER },
+                brevity: { type: SchemaType.NUMBER },
+                audience_targeting: { type: SchemaType.NUMBER },
+                controversy_sensitivity: { type: SchemaType.NUMBER },
+                statistical_depth: { type: SchemaType.NUMBER },
+                local_context_awareness: { type: SchemaType.NUMBER },
+                sponsor_compliance: { type: SchemaType.NUMBER },
+                accessibility_optimization: { type: SchemaType.NUMBER },
+                real_time_momentum: { type: SchemaType.NUMBER },
+                player_privacy_protection: { type: SchemaType.NUMBER }
+            },
+            required: [
+                "fact_verification", "anti_hyperbole", "source_attribution",
+                "temporal_accuracy", "entertainment_value", "brevity",
+                "audience_targeting", "controversy_sensitivity", "statistical_depth",
+                "local_context_awareness", "sponsor_compliance", "accessibility_optimization",
+                "real_time_momentum", "player_privacy_protection"
+            ]
+        },
+        overall_quality: { type: SchemaType.NUMBER },
+        gate_passed: { type: SchemaType.BOOLEAN },
+        consensus_strength: { type: SchemaType.NUMBER },
+        debate_summary: { type: SchemaType.STRING },
+        disputed_primitives: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }
+    },
+    required: ["final_scores", "overall_quality", "gate_passed", "consensus_strength", "debate_summary", "disputed_primitives"]
+};
+
 /**
- * Generate broadcast script using Gemini 3 Flash with structured output
+ * Generate broadcast script using Gemini Flash with structured output
  */
 export async function generateBroadcastScript(
     topic: string,
@@ -116,8 +219,26 @@ export async function generateBroadcastScript(
 }
 
 /**
- * Evaluate script using Gemini 3 Pro with reasoning chains
+ * Evaluate script using Gemini Pro with reasoning chains
  */
+function buildEvaluationPrompt(script: string, topic: string, primitives: Primitives): string {
+    return `You are a sophisticated PhD-level AI evaluator for a sports newsroom.
+
+Return the evaluation in MUST BE STRICT JSON format according to this schema:
+{
+  "scores": { "primitive_name": 0.XX },
+  "overall_quality": 0.XX,
+  "gate_passed": true/false,
+  "reasoning": [ { "primitive": "name", "score": 0.XX, "explanation": "...", "examples": ["..."] } ]
+}
+
+TOPIC: "${topic}"
+SCRIPT TO EVALUATE: "${script}"
+CURRENT PRIMITIVES: ${JSON.stringify(primitives)}
+
+Return ONLY the JSON. No other text.`;
+}
+
 export async function evaluateScript(
     script: string,
     topic: string,
@@ -127,21 +248,84 @@ export async function evaluateScript(
     const evaluationPrompt = buildEvaluationPrompt(script, topic, primitives);
 
     try {
-        const result = await geminiPro.generateContent({
-            contents: [{ role: "user", parts: [{ text: evaluationPrompt }] }],
-            // Evaluation schema is applied in the prompt instructions for Pro models if SDK support varies
-        });
+        const safetySettings = [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        ];
+
+        let result: any = null;
+        let retries = 2;
+        let currentModel = geminiPro;
+
+        while (retries >= 0) {
+            try {
+                result = await currentModel.generateContent({
+                    contents: [{ role: "user", parts: [{ text: evaluationPrompt }] }],
+                    generationConfig: {
+                        ...PRO_CONFIG.generationConfig,
+                        // @ts-ignore - responseSchema is supported in these models
+                        responseSchema: EVALUATION_SCHEMA,
+                    },
+                    safetySettings: safetySettings as any,
+                });
+                if (result && result.response && result.response.text()) break;
+                throw new Error('Empty response');
+            } catch (e: any) {
+                // If 403 Forbidden, fallback to Flash immediately
+                if (e.message.includes('403') || e.message.includes('Forbidden')) {
+                    console.warn('🔄 Falling back to Gemini Flash due to 403 Forbidden');
+                    currentModel = geminiFlash;
+                    retries = 2; // Reset retries for fallback
+                    continue;
+                }
+
+                if (retries === 0) throw e;
+                console.warn(`⏳ Retrying... (${retries} left)`);
+                await new Promise(r => setTimeout(r, 1000));
+                retries--;
+            }
+        }
+
+        if (!result) throw new Error('Failed to get result after retries');
 
         const text = result.response.text();
-        // Clean markdown if AI returned it
-        const cleanText = text.replace(/```json\n?|\n?```/g, '');
-        const parsed: EvaluationResult = JSON.parse(cleanText);
+        if (!text) {
+            console.error('🚨 Gemini returned empty response for evaluation.');
+            throw new Error('Empty evaluation response');
+        }
 
-        return {
-            ...parsed,
-            latency_ms: Date.now() - startTime,
-            model: PRO_CONFIG.model
-        };
+        console.log('📄 Raw AI Evaluation length:', text.length);
+
+        // Definitive JSON extraction: find the first { and last }
+        const firstBrace = text.indexOf('{');
+        const lastBrace = text.lastIndexOf('}');
+
+        if (firstBrace === -1 || lastBrace === -1) {
+            throw new Error('No JSON object found in response');
+        }
+
+        const rawJson = text.substring(firstBrace, lastBrace + 1);
+
+        // Robust cleaning
+        const cleanText = rawJson
+            .replace(/,(\s*[\]}])/g, '$1') // Remove trailing commas
+            .trim();
+
+        try {
+            const parsed: EvaluationResult = JSON.parse(cleanText);
+
+            return {
+                ...parsed,
+                latency_ms: Date.now() - startTime,
+                model: PRO_CONFIG.model
+            };
+        } catch (parseError: any) {
+            console.error('❌ Failed to parse Gemini JSON. Raw content snippet:', cleanText.substring(0, 1000));
+            console.error('❌ Error at position:', parseError.message);
+            throw parseError;
+        }
     } catch (error: any) {
         console.error('Evaluation error:', error);
         throw new Error(`Gemini evaluation failed: ${error.message}`);
@@ -201,24 +385,4 @@ STYLE CONTROLS:
 ${options?.context ? `CONTEXT: ${options.context}` : ''}
 
 OUTPUT VALID JSON matching the schema. No markdown.`;
-}
-
-function buildEvaluationPrompt(script: string, topic: string, primitives: Primitives): string {
-    return `Evaluate this sports script based on the following primitives:
-${Object.entries(primitives).map(([k, v]) => `• ${k}: ${v.toFixed(2)}`).join('\n')}
-
-TOPIC: ${topic}
-SCRIPT: "${script}"
-
-For EACH primitive, provide a score (0.0-1.0), explanation, and examples.
-If overall quality < 0.72, suggest mutations.
-
-RETURN ONLY VALID JSON WITH THIS STRUCTURE:
-{
-  "scores": { "primitive_name": score },
-  "reasoning": [ { "primitive": "name", "score": 0.0, "explanation": "...", "examples": [] } ],
-  "overall_quality": 0.0,
-  "gate_passed": boolean,
-  "suggested_mutations": [ { "primitive": "name", "current_value": 0.0, "suggested_value": 0.0, "reason": "..." } ]
-}`;
 }

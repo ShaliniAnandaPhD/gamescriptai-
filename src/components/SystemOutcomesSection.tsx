@@ -40,20 +40,29 @@ function MetricCard(props: {
     subtitle?: string;
     accent?: "green" | "blue" | "gold" | "neutral";
 }) {
-    const accentClass =
+    const gradientClass =
         props.accent === "green"
-            ? "text-emerald-300"
+            ? "from-green-400 to-emerald-500"
             : props.accent === "blue"
-                ? "text-cyan-300"
+                ? "from-gemini-blue to-gemini-cyan"
                 : props.accent === "gold"
-                    ? "text-amber-300"
-                    : "text-slate-200";
+                    ? "from-yellow-400 to-orange-500"
+                    : "from-slate-200 to-slate-400";
 
     return (
-        <div className="rounded-2xl border border-white/10 bg-black/30 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset]">
-            <div className="text-xs tracking-[0.18em] text-slate-400 uppercase">{props.title}</div>
-            <div className={`mt-3 text-4xl font-semibold ${accentClass}`}>{props.value}</div>
+        <div className="rounded-2xl border border-white/10 bg-gray-800/50 backdrop-blur-sm p-6 shadow-xl transition-all duration-300 hover:scale-105">
+            <div className="text-xs tracking-[0.18em] text-slate-400 uppercase font-medium">{props.title}</div>
+            <div className={`mt-3 text-5xl font-bold bg-gradient-to-r ${gradientClass} bg-clip-text text-transparent`}>
+                {props.value}
+            </div>
             {props.subtitle ? <div className="mt-2 text-sm text-slate-400">{props.subtitle}</div> : null}
+            {props.accent === "blue" && (
+                <div className="mt-4 flex items-center gap-2">
+                    <span className="text-[10px] px-2 py-0.5 bg-gemini-blue/10 border border-gemini-blue/20 rounded-full text-gemini-blue">
+                        Gemini 3 Pro Evaluated
+                    </span>
+                </div>
+            )}
         </div>
     );
 }
