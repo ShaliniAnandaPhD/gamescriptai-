@@ -10,6 +10,7 @@ if (import.meta.env.DEV) {
 
 
 console.log("🚀 Initializing React application...");
+alert("DEBUG: JS IS EXECUTING!");
 
 try {
   const rootElement = document.getElementById('root');
