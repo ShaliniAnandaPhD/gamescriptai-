@@ -10,10 +10,11 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { runCycle } from "./runCycle";
+import { analyzeGameImage } from "./gemini-enhanced";
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "5mb" })); // Increased limit for images
 
 // ── health ────────────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
@@ -23,6 +24,31 @@ app.get("/api/health", (_req, res) => {
         hf_configured: !!process.env.HF_API_KEY,
         sidecar_url: "http://localhost:5199",
     });
+});
+
+// ── multimodal ─────────────────────────────────────────────────────────────
+app.post("/api/multimodal", async (req, res) => {
+    try {
+        const { image, analysisType } = req.body;
+        if (!image || !analysisType) {
+            return res.status(400).json({ error: "image and analysisType are required" });
+        }
+
+        // Strip data prefix if base64
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+
+        console.log(`🖼️  Multimodal analysis request: ${analysisType}`);
+        const result = await analyzeGameImage(base64Data, analysisType);
+
+        res.json({
+            success: true,
+            ...result,
+            model: "gemini-2.0-flash-exp"
+        });
+    } catch (e: any) {
+        console.error("Error in /api/multimodal:", e);
+        res.status(500).json({ error: e?.message ?? "Analysis failed" });
+    }
 });
 
 // ── run-cycle ─────────────────────────────────────────────────────────────
@@ -43,8 +69,6 @@ app.post("/api/run-cycle", async (req, res) => {
 
         // ── 1. Run the cycle locally (generates text, evaluates, learns) ──
         const out = await runCycle({
-            apiKey: hfKey,
-            model: "meta-llama/Llama-3.2-3B-Instruct",
             topic,
             primitives,
             episode_num: episodeNum,
@@ -57,7 +81,7 @@ app.post("/api/run-cycle", async (req, res) => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    episode_num: out.episode_num ?? episodeNum,
+                    episode_num: episodeNum,
                     episode_id: out.episode_id ?? `ep_${episodeNum}`,
                     boot_id: out.boot_id ?? "local",
                     topic: out.topic ?? topic,

@@ -19,6 +19,7 @@ import { runCycleClient } from '../lib/runCycleClient';
 import HowItWorksOptionC from './HowItWorksOptionC';
 import SystemOutcomesSection from './SystemOutcomesSection';
 import TestWithAnyIdeaCard from './TestWithAnyIdeaCard';
+import MultimodalAnalyzer from './MultimodalAnalyzer';
 
 
 
@@ -411,13 +412,13 @@ const mapStaticToEpisode = (item: (typeof STATIC_HISTORY)[number]) => ({
         style_score: item.score,
         confidence: item.score,
         gate_passed: item.status !== "FAIL",
-        mutations: item.note
+        mutations: (item as any).note
             ? [
                 {
                     primitive_name:
-                        item.note.split(":")[1]?.split(" ")[1] || "adaptation",
+                        ((item as any).note as string).split(":")[1]?.split(" ")[1] || "adaptation",
                     new_weight: 1.0,
-                    reason: item.note,
+                    reason: (item as any).note,
                 },
             ]
             : [],
@@ -1097,42 +1098,37 @@ export default function LivingRoom() {
                     </div>
 
                     {Object.keys(primitives).length > 0 ? (
-                        <div className="space-y-3">
-                            {Object.entries(primitives).map(([key, primitive]: [string, any]) => (
-                                <div
-                                    key={key}
-                                    className="bg-[#0a0a0a] p-4 rounded border border-gray-800 flex items-center justify-between group hover:border-gray-700 transition"
-                                >
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <div className="font-mono text-sm text-gray-300">{key}</div>
-                                            {primitive?.created_by === "meta_optimizer" && (
-                                                <div className="px-1.5 py-0.5 bg-gray-900 border border-gray-700 rounded text-[10px] font-mono text-gray-400">
-                                                    AUTO-LEARNED
-                                                </div>
-                                            )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {Object.entries(primitives).map(([key, primitive]: [string, any]) => {
+                                const weight = typeof primitive === 'number' ? primitive : (primitive?.weight ?? 0);
+                                return (
+                                    <div
+                                        key={key}
+                                        className="bg-[#0a0a0a] p-4 rounded border border-gray-800 flex items-center justify-between group hover:border-gray-700 transition"
+                                    >
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-1">
+                                                <div className="font-mono text-sm text-gray-300">{key.replace(/_/g, ' ').toUpperCase()}</div>
+                                            </div>
+                                            <div className="text-[10px] text-gray-600 font-mono">
+                                                {weight > 0.8 ? 'STRICT' : weight > 0.6 ? 'BALANCED' : 'RELAXED'}
+                                            </div>
                                         </div>
-                                        <div className="text-xs text-gray-600">{primitive?.text}</div>
-                                    </div>
 
-                                    <div className="text-right ml-6 flex items-center gap-4">
-                                        <div className="w-32 h-1.5 bg-gray-900 rounded-full overflow-hidden">
-                                            <div
-                                                style={{
-                                                    width:
-                                                        typeof primitive?.weight === "number"
-                                                            ? `${primitive.weight * 100}%`
-                                                            : "0%",
-                                                }}
-                                                className="h-full bg-white/80 rounded-full"
-                                            />
-                                        </div>
-                                        <div className="font-mono text-lg text-white w-12 text-right">
-                                            {fmtFixed(primitive?.weight, 2)}
+                                        <div className="text-right ml-6 flex items-center gap-4">
+                                            <div className="w-24 h-1 bg-gray-900 rounded-full overflow-hidden">
+                                                <div
+                                                    style={{ width: `${weight * 100}%` }}
+                                                    className={`h-full rounded-full ${weight > 0.8 ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-white/60'}`}
+                                                />
+                                            </div>
+                                            <div className="font-mono text-base text-white w-10 text-right">
+                                                {fmtFixed(weight, 2)}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : (
                         <div className="text-center text-gray-500 py-8 font-mono text-sm">
@@ -1149,6 +1145,12 @@ export default function LivingRoom() {
                 <div className="mb-8">
                     <HowItWorksOptionC />
                 </div>
+
+                {/* 5. MULTIMODAL ANALYZER */}
+                <div className="text-blue-500 font-mono text-xs mb-4 tracking-widest uppercase text-center mt-12">
+                    Section 5: Multimodal Intelligence
+                </div>
+                <MultimodalAnalyzer />
 
                 {/* 5. DEMO TEST SCENARIOS */}
                 < div className="text-blue-500 font-mono text-xs mb-4 tracking-widest uppercase" >
@@ -1680,14 +1682,14 @@ export default function LivingRoom() {
                 <SystemOutcomesSection
                     episodes={episodes.map((ep: any) => ({
                         id: ep.episode_num,
-                        qualityScore: ep.quality_score,
-                        issues: ep.issues_count,
-                        gate: {
-                            passed: ep.metadata?.gate_passed,
+                        quality_score: ep.quality_score,
+                        issues_count: ep.issues_count,
+                        metadata: {
+                            gate_passed: ep.metadata?.gate_passed,
                             confidence: ep.metadata?.confidence
                         },
                         autonomy: {
-                            primitiveUpdates: ep.metadata?.mutations?.length || 0
+                            primitive_updates: ep.metadata?.mutations?.length || 0
                         }
                     }))}
                 />
