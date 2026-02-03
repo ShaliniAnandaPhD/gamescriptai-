@@ -54,7 +54,7 @@ function App() {
           DEBUG: FRONTEND MOUNTED
         </div>
         <div className="absolute top-0 left-0 p-1 text-[8px] text-gray-800 opacity-20 pointer-events-none">
-          V1.0.1-DEPLOY-CHECK
+          V1.0.1-DEPLOY-CHECK [ID: 1770091391]
         </div>
         <LivingNewsroom />
       </div>
