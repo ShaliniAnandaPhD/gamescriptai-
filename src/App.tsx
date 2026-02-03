@@ -50,6 +50,9 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-background text-foreground relative">
+        <div style={{ position: 'fixed', top: 0, right: 0, padding: '4px', background: 'red', color: 'white', zIndex: 9999, fontSize: '10px' }}>
+          DEBUG: FRONTEND MOUNTED
+        </div>
         <div className="absolute top-0 left-0 p-1 text-[8px] text-gray-800 opacity-20 pointer-events-none">
           V1.0.1-DEPLOY-CHECK
         </div>
