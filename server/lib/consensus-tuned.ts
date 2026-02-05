@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Primitives } from '../primitives';
+import { safeGenerateContent } from './gemini-utils';
 
 const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -21,17 +22,23 @@ async function strictCriticEvaluation(
     const model = genAI.getGenerativeModel({
         model: "gemini-2.0-flash",
         generationConfig: {
-            temperature: 0.1, // Very strict, low creativity
+            temperature: 0.1, // Very strict
             responseMimeType: "application/json",
         },
-        systemInstruction: `You are the STRICT CRITIC - a cynical, pedantic editor who HATES hype.
-Find EVERY flaw. Be HARSH.
+        systemInstruction: `You are the STRICT CRITIC - a cynical, pedantic editor who HATES hype and lazy writing.
+CRITICISM GUIDELINES:
+- Rate the SCRIPT's actual performance on each primitive.
+- DO NOT copy the current primitive values. Rate what you see.
+- If the script is hype-y, "anti_hyperbole" MUST be low (e.g. 0.2), even if the input was high.
+- If the script fails to cite sources, "source_attribution" MUST be low.
+- Be extremely harsh. If quality is below 0.7, VOTE FAIL.
+
 Return JSON:
 {
   "score": 0.XX,
   "vote": "pass" | "fail",
-  "complaint": "...",
-  "examples": ["..."],
+  "complaint": "Overall summary of the main failure",
+  "examples": ["Specific quotes from the script that failed"],
   "primitive_scores": { 
      "fact_verification": 0.X, 
      "anti_hyperbole": 0.X, 
@@ -43,7 +50,8 @@ Return JSON:
 }`
     });
 
-    const result = await model.generateContent(`Evaluate: "${script}" for Topic: "${topic}". Primitives: ${JSON.stringify(primitives)}`);
+    const prompt = `Evaluate: "${script}" for Topic: "${topic}". Input Primitives: ${JSON.stringify(primitives)}`;
+    const result = await safeGenerateContent(model, prompt);
     return JSON.parse(result.response.text());
 }
 
@@ -63,16 +71,20 @@ async function balancedJudgeEvaluation(
     const model = genAI.getGenerativeModel({
         model: "gemini-2.0-flash",
         generationConfig: {
-            temperature: 0.3, // Balanced
+            temperature: 0.3,
             responseMimeType: "application/json",
         },
         systemInstruction: `You are the BALANCED JUDGE - fair, neutral, and objective.
-Provide a balanced assessment.
+EVALUATION GUIDELINES:
+- Assess the script's actual performance against the behavioral primitives.
+- Be objective. If the script fulfills the constraints well, provide a fair score.
+- DO NOT just echo the input primitives; rate the resulting content.
+
 Return JSON:
 {
   "score": 0.XX,
   "vote": "pass" | "fail",
-  "reasoning": "...",
+  "reasoning": "Balanced explanation of your score",
   "primitive_scores": { 
      "fact_verification": 0.X, 
      "anti_hyperbole": 0.X, 
@@ -84,7 +96,8 @@ Return JSON:
 }`
     });
 
-    const result = await model.generateContent(`Evaluate: "${script}" for Topic: "${topic}". Primitives: ${JSON.stringify(primitives)}`);
+    const prompt = `Evaluate: "${script}" for Topic: "${topic}". Input Primitives: ${JSON.stringify(primitives)}`;
+    const result = await safeGenerateContent(model, prompt);
     return JSON.parse(result.response.text());
 }
 
@@ -104,16 +117,20 @@ async function optimisticReviewerEvaluation(
     const model = genAI.getGenerativeModel({
         model: "gemini-2.0-flash",
         generationConfig: {
-            temperature: 0.5, // More creative, enthusiastic
+            temperature: 0.5,
             responseMimeType: "application/json",
         },
         systemInstruction: `You are the OPTIMISTIC REVIEWER - an excitable sports fan.
-Look for what WORKS. Be generous.
+REVIEW GUIDELINES:
+- Look for what WORKS. Be generous.
+- Rate the script based on how well it engages the audience.
+- Even you must recognize if primitives are totally ignored, but spin it positively.
+
 Return JSON:
 {
   "score": 0.XX,
   "vote": "pass" | "fail",
-  "praise": "...",
+  "praise": "Enthusiastic summary of what worked",
   "primitive_scores": { 
      "fact_verification": 0.X, 
      "anti_hyperbole": 0.X, 
@@ -125,7 +142,8 @@ Return JSON:
 }`
     });
 
-    const result = await model.generateContent(`Evaluate: "${script}" for Topic: "${topic}". Primitives: ${JSON.stringify(primitives)}`);
+    const prompt = `Evaluate: "${script}" for Topic: "${topic}". Input Primitives: ${JSON.stringify(primitives)}`;
+    const result = await safeGenerateContent(model, prompt);
     return JSON.parse(result.response.text());
 }
 
@@ -178,7 +196,7 @@ export async function evaluateWithTunedConsensus(
         consensus_score,
         final_vote,
         consensus_strength,
-        primary_complaint: final_vote === 'fail' ? strict.complaint : undefined,
+        primary_complaint: final_vote === 'fail' ? strict.complaint : (strict.vote === 'fail' ? strict.complaint : undefined),
         disputed_primitives: [],
         latency_ms: Date.now() - startTime,
         primitive_scores

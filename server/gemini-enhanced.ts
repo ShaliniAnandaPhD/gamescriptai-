@@ -185,6 +185,8 @@ export const CONSENSUS_SCHEMA: any = {
     required: ["final_scores", "overall_quality", "gate_passed", "consensus_strength", "debate_summary", "disputed_primitives"]
 };
 
+import { safeGenerateContent } from './lib/gemini-utils';
+
 /**
  * Generate broadcast script using Gemini Flash with structured output
  */
@@ -197,13 +199,8 @@ export async function generateBroadcastScript(
     const systemPrompt = buildGenerationPrompt(topic, primitives, options);
 
     try {
-        const result = await geminiFlash.generateContent({
-            contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-            generationConfig: {
-                ...FLASH_CONFIG.generationConfig,
-                // @ts-ignore - responseSchema is supported in later versions of the SDK
-                responseSchema: GENERATION_SCHEMA,
-            }
+        const result = await safeGenerateContent(geminiFlash, systemPrompt, {
+            responseSchema: GENERATION_SCHEMA
         });
 
         const text = result.response.text();
@@ -250,47 +247,9 @@ export async function evaluateScript(
     const evaluationPrompt = buildEvaluationPrompt(script, topic, primitives);
 
     try {
-        const safetySettings = [
-            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-        ];
-
-        let result: any = null;
-        let retries = 2;
-        let currentModel = geminiPro;
-
-        while (retries >= 0) {
-            try {
-                result = await currentModel.generateContent({
-                    contents: [{ role: "user", parts: [{ text: evaluationPrompt }] }],
-                    generationConfig: {
-                        ...PRO_CONFIG.generationConfig,
-                        // @ts-ignore - responseSchema is supported in these models
-                        responseSchema: EVALUATION_SCHEMA,
-                    },
-                    safetySettings: safetySettings as any,
-                });
-                if (result && result.response && result.response.text()) break;
-                throw new Error('Empty response');
-            } catch (e: any) {
-                // If 403 Forbidden, fallback to Flash immediately
-                if (e.message.includes('403') || e.message.includes('Forbidden')) {
-                    console.warn('🔄 Falling back to Gemini Flash due to 403 Forbidden');
-                    currentModel = geminiFlash;
-                    retries = 2; // Reset retries for fallback
-                    continue;
-                }
-
-                if (retries === 0) throw e;
-                console.warn(`⏳ Retrying... (${retries} left)`);
-                await new Promise(r => setTimeout(r, 1000));
-                retries--;
-            }
-        }
-
-        if (!result) throw new Error('Failed to get result after retries');
+        const result = await safeGenerateContent(geminiPro, evaluationPrompt, {
+            responseSchema: EVALUATION_SCHEMA
+        });
 
         const text = result.response.text();
         if (!text) {

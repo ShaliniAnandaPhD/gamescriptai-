@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { kv } from './run-context';
+import { safeGenerateContent } from './gemini-utils';
 
 const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -77,10 +78,10 @@ Return JSON (exactly in this format):
 
 BE SPECIFIC. The user needs to understand WHY you chose this mutation size.`;
 
-    const result = await geminiPro.generateContent(prompt);
-    const text = result.response.text().replace(/```json\n?|\n?```/g, '').trim();
-
     try {
+        const result = await safeGenerateContent(geminiPro, prompt);
+        const text = result.response.text().replace(/```json\n?|\n?```/g, '').trim();
+
         const analysis = JSON.parse(text);
         console.log(`   Recommended mutation: ${analysis.recommended_mutation_size.toFixed(3)}`);
         console.log(`   Reasoning: ${analysis.reasoning.substring(0, 100)}...`);
@@ -90,14 +91,14 @@ BE SPECIFIC. The user needs to understand WHY you chose this mutation size.`;
             latency_ms: Date.now() - startTime,
         };
     } catch (e) {
-        console.error('Failed to parse meta-learning response:', text);
+        console.error('Meta-learning call failed:', e);
         // Fallback analysis
         return {
             correlations_analyzed: 0,
-            patterns_matched: ["Fallback analysis due to parsing error"],
+            patterns_matched: ["Fallback analysis due to error"],
             historical_effectiveness: [],
             recommended_mutation_size: 0.10,
-            reasoning: "A default mutation of 0.10 was applied as the meta-learning model returned an unparseable response.",
+            reasoning: "A default mutation of 0.10 was applied as the meta-learning model failed or returned an unparseable response.",
             confidence: 0.5,
             latency_ms: Date.now() - startTime,
         };
