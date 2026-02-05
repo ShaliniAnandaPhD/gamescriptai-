@@ -21,7 +21,11 @@ import SystemOutcomesSection from './SystemOutcomesSection';
 import TestWithAnyIdeaCard from './TestWithAnyIdeaCard';
 import MultimodalAnalyzer from './MultimodalAnalyzer';
 import MetaLearningDashboard from './MetaLearningDashboard';
-import { Sparkles, Activity } from 'lucide-react';
+import { Sparkles, Activity, Brain, Database, Zap } from 'lucide-react';
+import { MissionControl } from './MissionControl';
+import { PrimitiveSliders } from './PrimitiveSliders';
+import { RunContextViewer } from './RunContextViewer';
+import { InstantEvolution } from './InstantEvolution';
 
 
 
@@ -505,6 +509,7 @@ export default function LivingRoom() {
     const [runningCustom, setRunningCustom] = useState(false);
     const [customTopic, setCustomTopic] = useState("");
     const [lastResult, setLastResult] = useState<any>(null);
+    const [runContext, setRunContext] = useState<any>(null);
 
     const [geminiKey, setGeminiKey] = useState('');
     const [geminiModel, setGeminiModel] = useState('gemini-2.0-flash-exp');
@@ -1019,6 +1024,25 @@ export default function LivingRoom() {
         }
     };
 
+    const handlePrimitiveUpdate = async (name: string, value: number) => {
+        try {
+            // Optimistic update
+            setPrimitives((prev: any) => ({ ...prev, [name]: value }));
+
+            // In Vite/Express, APIs are at http://localhost:5174/api/...
+            const baseUrl = window.location.origin.includes('localhost')
+                ? window.location.origin.replace(/:[0-9]+/, ':5174')
+                : '';
+            await fetch(`${baseUrl}/api/primitives`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, value }),
+            });
+        } catch (error) {
+            console.error('Failed to update primitive:', error);
+        }
+    };
+
     const latestEpisode = episodes.length > 0 ? episodes[episodes.length - 1] : null;
 
     return (
@@ -1090,56 +1114,29 @@ export default function LivingRoom() {
                     </div>
                 </div>
 
-                {/* 3. BEHAVIORAL PRIMITIVES */}
-                <div className="bg-[#111] p-8 rounded border border-gray-800 mb-8">
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <div className="text-blue-500 font-mono text-xs mb-1 tracking-widest uppercase">
-                                Section 3: Configuration
-                            </div>
-                            <h2 className="text-xl font-light text-white">Behavioral Primitives</h2>
-                        </div>
-                        <span className="text-xs font-mono text-gray-500">RUNTIME CONFIGURATION</span>
+                {/* 2.5 INSTANT EVOLUTION DEMO (NEW) */}
+                <div className="mb-12">
+                    <InstantEvolution
+                        onStart={() => setRunContext({ final_status: 'in_progress', run_id: 'pending-' + Date.now(), topic: 'evolution_demo' })}
+                        onComplete={(context) => setRunContext(context)}
+                    />
+                </div>
+
+                {/* 3. NEURAL PIPELINE & MISSION CONTROL (NEW) */}
+                <div className="mb-12">
+                    <div className="text-gemini-blue font-mono text-xs mb-4 tracking-widest uppercase font-bold">
+                        Section 3: Neural Pipeline & Mission Control
                     </div>
+                    <MissionControl runContext={runContext} />
 
-                    {Object.keys(primitives).length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {Object.entries(primitives).map(([key, primitive]: [string, any]) => {
-                                const weight = typeof primitive === 'number' ? primitive : (primitive?.weight ?? 0);
-                                return (
-                                    <div
-                                        key={key}
-                                        className="bg-[#0a0a0a] p-4 rounded border border-gray-800 flex items-center justify-between group hover:border-gray-700 transition"
-                                    >
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-1">
-                                                <div className="font-mono text-sm text-gray-300">{key.replace(/_/g, ' ').toUpperCase()}</div>
-                                            </div>
-                                            <div className="text-[10px] text-gray-600 font-mono">
-                                                {weight > 0.8 ? 'STRICT' : weight > 0.6 ? 'BALANCED' : 'RELAXED'}
-                                            </div>
-                                        </div>
-
-                                        <div className="text-right ml-6 flex items-center gap-4">
-                                            <div className="w-24 h-1 bg-gray-900 rounded-full overflow-hidden">
-                                                <div
-                                                    style={{ width: `${weight * 100}%` }}
-                                                    className={`h-full rounded-full ${weight > 0.8 ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-white/60'}`}
-                                                />
-                                            </div>
-                                            <div className="font-mono text-base text-white w-10 text-right">
-                                                {fmtFixed(weight, 2)}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <div className="text-center text-gray-500 py-8 font-mono text-sm">
-                            Loading primitives...
-                        </div>
-                    )}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <PrimitiveSliders
+                            primitives={primitives}
+                            highlightMutations={runContext?.mutation?.mutations_applied.map((m: any) => m.primitive) || []}
+                            onUpdate={handlePrimitiveUpdate}
+                        />
+                        {runContext && <RunContextViewer context={runContext} />}
+                    </div>
                 </div>
 
                 {/* 4. SIMPLIFIED ARCHITECTURE */}

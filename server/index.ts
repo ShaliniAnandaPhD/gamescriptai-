@@ -20,6 +20,8 @@ import {
 import { evaluateWithConsensus } from "./lib/consensus-evaluation";
 import { predictQuality } from "./lib/predictive-quality";
 import { getNarrativeContinuity } from "./lib/contextual-memory";
+import { runUnifiedPipeline } from "./lib/pipeline-orchestrator";
+import { kv } from "@vercel/kv";
 
 const app = express();
 app.use(cors());
@@ -174,6 +176,66 @@ app.post("/api/run-cycle", async (req, res) => {
     } catch (e: any) {
         console.error("Error in /api/run-cycle:", e);
         res.status(400).json({ error: e?.message ?? "Unknown error" });
+    }
+});
+
+// ── UNIFIED PIPELINE ────────────────────────────────────────────────────────
+app.post("/api/generate-unified", async (req, res) => {
+    try {
+        const { topic } = req.body;
+        if (!topic || topic.trim().length < 10) {
+            return res.status(400).json({ error: "Topic must be at least 10 characters" });
+        }
+
+        console.log(`\n🚀 UNIFIED PIPELINE REQUEST: "${topic}"`);
+        const context = await runUnifiedPipeline(topic);
+
+        res.json({
+            success: true,
+            context,
+            summary: {
+                run_id: context.run_id,
+                final_status: context.final_status,
+                total_latency_ms: context.total_latency_ms
+            }
+        });
+    } catch (e: any) {
+        console.error("❌ Unified pipeline error:", e);
+        res.status(500).json({ error: e.message || "Pipeline execution failed" });
+    }
+});
+
+app.get("/api/run-contexts", async (req, res) => {
+    try {
+        const contexts = await kv.lrange('run_contexts', 0, 9) || [];
+        res.json({
+            success: true,
+            contexts: contexts.map(c => typeof c === 'string' ? JSON.parse(c) : c),
+            count: contexts.length
+        });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+import { getPrimitives, updatePrimitive } from "./primitives";
+
+app.get("/api/primitives", async (req, res) => {
+    try {
+        const primitives = await getPrimitives();
+        res.json(primitives);
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post("/api/primitives", async (req, res) => {
+    try {
+        const { name, value } = req.body;
+        await updatePrimitive(name, value);
+        res.json({ success: true });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
     }
 });
 

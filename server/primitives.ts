@@ -18,6 +18,7 @@ export type Primitives = {
     player_privacy_protection: number;
 };
 
+
 export const defaultPrimitives: Primitives = {
     // V1
     fact_verification: 0.70,
@@ -37,6 +38,18 @@ export const defaultPrimitives: Primitives = {
     real_time_momentum: 0.80,
     player_privacy_protection: 0.85,
 };
+
+let currentPrimitives: Primitives = { ...defaultPrimitives };
+
+export async function getPrimitives(): Promise<Primitives> {
+    return { ...currentPrimitives };
+}
+
+export async function updatePrimitive(name: string, value: number): Promise<void> {
+    if (name in currentPrimitives) {
+        (currentPrimitives as any)[name] = value;
+    }
+}
 
 export function learn(primitives: Primitives, issues: any[]): Primitives {
     const updated = { ...primitives };
