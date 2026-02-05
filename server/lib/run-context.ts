@@ -1,6 +1,54 @@
 import { v4 as uuidv4 } from 'uuid';
-import { kv } from '@vercel/kv';
+import { kv as vercelKv } from '@vercel/kv';
 import weave from 'weave';
+
+// Fallback for local development without Vercel KV
+const memoryStore: Record<string, any[]> = {
+    run_contexts: []
+};
+
+export const kv = {
+    lpush: async (key: string, value: string) => {
+        try {
+            return await vercelKv.lpush(key, value);
+        } catch (e) {
+            memoryStore[key] = memoryStore[key] || [];
+            memoryStore[key].unshift(JSON.parse(value));
+            return memoryStore[key].length;
+        }
+    },
+    ltrim: async (key: string, start: number, stop: number) => {
+        try {
+            return await vercelKv.ltrim(key, start, stop);
+        } catch (e) {
+            memoryStore[key] = (memoryStore[key] || []).slice(start, stop + 1);
+            return 'OK';
+        }
+    },
+    lrange: async (key: string, start: number, stop: number) => {
+        try {
+            return await vercelKv.lrange(key, start, stop);
+        } catch (e) {
+            return (memoryStore[key] || []).slice(start, stop + 1);
+        }
+    },
+    incr: async (key: string) => {
+        try {
+            return await vercelKv.incr(key);
+        } catch (e) {
+            const val = (memoryStore[key] as any || 0) + 1;
+            memoryStore[key] = val as any;
+            return val;
+        }
+    },
+    get: async (key: string) => {
+        try {
+            return await vercelKv.get(key);
+        } catch (e) {
+            return memoryStore[key];
+        }
+    }
+};
 
 /**
  * CENTRAL NERVOUS SYSTEM

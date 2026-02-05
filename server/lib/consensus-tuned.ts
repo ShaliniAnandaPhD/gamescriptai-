@@ -1,7 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Primitives } from '../primitives';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "";
+const genAI = new GoogleGenerativeAI(apiKey);
 
 /**
  * STRICT CRITIC - Cynical, pedantic, hates hype
@@ -18,7 +19,7 @@ async function strictCriticEvaluation(
     primitive_scores: Record<string, number>;
 }> {
     const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-pro",
+        model: "gemini-2.0-flash",
         generationConfig: {
             temperature: 0.1, // Very strict, low creativity
             responseMimeType: "application/json",
@@ -60,7 +61,7 @@ async function balancedJudgeEvaluation(
     primitive_scores: Record<string, number>;
 }> {
     const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-pro",
+        model: "gemini-2.0-flash",
         generationConfig: {
             temperature: 0.3, // Balanced
             responseMimeType: "application/json",
@@ -101,7 +102,7 @@ async function optimisticReviewerEvaluation(
     primitive_scores: Record<string, number>;
 }> {
     const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-pro",
+        model: "gemini-2.0-flash",
         generationConfig: {
             temperature: 0.5, // More creative, enthusiastic
             responseMimeType: "application/json",

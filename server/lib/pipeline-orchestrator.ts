@@ -1,10 +1,9 @@
-import { createRunContext, updateRunContext, RunContext, saveRunContext } from './run-context';
+import { createRunContext, updateRunContext, RunContext, saveRunContext, kv } from './run-context';
 import { predictQuality } from './predictive-quality';
 import { generateBroadcastScript } from '../gemini-enhanced';
 import { evaluateWithTunedConsensus } from './consensus-tuned';
 import { calculateVisibleAdaptiveMutation } from './meta-learning-visible';
 import { getPrimitives, updatePrimitive } from '../primitives';
-import { kv } from '@vercel/kv';
 
 /**
  * UNIFIED PIPELINE - Orchestrates all 5 engines with full context

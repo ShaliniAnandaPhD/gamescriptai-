@@ -6,7 +6,9 @@ import {
 import { type Primitives } from './primitives';
 
 // Initialize Gemini API
-const genAI = new GoogleGenerativeAI(process.env.VITE_GEMINI_API_KEY || "");
+// Initialize Gemini API
+const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "";
+const genAI = new GoogleGenerativeAI(apiKey);
 
 // Model configurations optimized for GameScript AI
 const FLASH_CONFIG = {

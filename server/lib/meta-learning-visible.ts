@@ -1,8 +1,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { kv } from '@vercel/kv';
+import { kv } from './run-context';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const geminiPro = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "";
+const genAI = new GoogleGenerativeAI(apiKey);
+const geminiPro = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 /**
  * Meta-learning with VISIBLE reasoning
@@ -31,6 +32,7 @@ export async function calculateVisibleAdaptiveMutation(
 
     try {
         mutationHistory = await kv.lrange('primitive_mutations', 0, 49) || [];
+        // @ts-ignore
         correlations = await kv.get('meta:correlations') || [];
     } catch (e) {
         console.warn('Could not fetch historical data from KV, using defaults');
