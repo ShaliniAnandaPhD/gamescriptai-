@@ -334,7 +334,14 @@ export async function analyzeGameImage(
 }
 
 function buildGenerationPrompt(topic: string, primitives: Primitives, options?: any): string {
-    return `You are a professional sports broadcaster generating commentary for: "${topic}"
+    return `You are a versatile AI analyst and content generator. 
+
+GENERATE CONTENT FOR: "${topic}"
+
+STYLE ADAPTATION:
+- If the topic is sports, use a professional sports broadcaster tone.
+- If the topic is technical, use a Silicon Valley tech analyst tone.
+- If the topic is general news, use a standard news anchor tone.
 
 BEHAVIORAL PRIMITIVES (personality constraints, 0.0-1.0 scale):
 ${Object.entries(primitives).map(([k, v]) => `• ${k}: ${v.toFixed(2)}`).join('\n')}

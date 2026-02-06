@@ -114,7 +114,7 @@ export function InstantEvolution({ onStart, onComplete }: { onStart: () => void,
                 {running ? (
                     <>
                         <Loader2 className="w-8 h-8 animate-spin" />
-                        Evolving Personality...
+                        Evolving: {selectedPrompt.name}
                     </>
                 ) : (
                     <>
@@ -123,6 +123,13 @@ export function InstantEvolution({ onStart, onComplete }: { onStart: () => void,
                     </>
                 )}
             </button>
+
+            {running && (
+                <div className="mt-4 px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-xl flex items-center gap-3">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                    <span className="text-xs font-mono text-blue-400">Processing: {selectedPrompt.topic.substring(0, 40)}...</span>
+                </div>
+            )}
 
             <div className="mt-6 flex justify-center gap-8">
                 <div className="flex items-center gap-2">
