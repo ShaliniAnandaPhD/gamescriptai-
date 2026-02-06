@@ -231,8 +231,12 @@ app.get("/api/primitives", async (req, res) => {
 
 app.post("/api/primitives", async (req, res) => {
     try {
-        const { name, value } = req.body;
-        await updatePrimitive(name, value);
+        const { name, primitive, value } = req.body;
+        const target = name || primitive;
+        if (target) {
+            console.log(`🎛️ Manual primitive update: ${target} -> ${value}`);
+            await updatePrimitive(target, value);
+        }
         res.json({ success: true });
     } catch (e: any) {
         res.status(500).json({ error: e.message });

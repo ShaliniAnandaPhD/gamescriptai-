@@ -81,6 +81,29 @@ export function RunContextViewer({ context }: { context: any }) {
                                     {context.consensus.final_vote.toUpperCase()}
                                 </div>
                             </div>
+
+                            {/* Predicted vs Actual */}
+                            {context.prediction && (
+                                <div className="mt-4 pt-4 border-t border-gray-800 flex items-center justify-between">
+                                    <div className="text-[10px] text-gray-500 font-bold uppercase">System Accuracy Check</div>
+                                    <div className="flex gap-4">
+                                        <div className="text-right">
+                                            <div className="text-[9px] text-gray-600 font-bold">PREDICTED</div>
+                                            <div className="text-xs font-mono text-gray-400">{(context.prediction.predicted_quality * 100).toFixed(1)}%</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-[9px] text-gray-600 font-bold">ACTUAL</div>
+                                            <div className="text-xs font-mono text-white">{(context.consensus.consensus_score * 100).toFixed(1)}%</div>
+                                        </div>
+                                        <div className="text-right border-l border-gray-800 pl-4">
+                                            <div className="text-[9px] text-gray-600 font-bold">VARIANCE</div>
+                                            <div className={`text-xs font-mono ${Math.abs(context.prediction.predicted_quality - context.consensus.consensus_score) < 0.1 ? 'text-green-400' : 'text-yellow-400'}`}>
+                                                {((context.consensus.consensus_score - context.prediction.predicted_quality) * 100).toFixed(1)}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid md:grid-cols-3 gap-4">
@@ -152,6 +175,20 @@ export function RunContextViewer({ context }: { context: any }) {
                         </div>
                     </AuditSection>
                 )}
+
+                {/* Raw Context JSON */}
+                <AuditSection
+                    title="Forensic JSON Export"
+                    isExpanded={expandedSections.has('json')}
+                    onToggle={() => toggleSection('json')}
+                    status="complete"
+                >
+                    <div className="bg-black/40 border border-gray-800 rounded-xl p-4 overflow-hidden">
+                        <pre className="text-[10px] text-gray-500 font-mono overflow-auto max-h-60 custom-scrollbar">
+                            {JSON.stringify(context, null, 2)}
+                        </pre>
+                    </div>
+                </AuditSection>
             </div>
         </div>
     );

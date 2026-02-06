@@ -1,4 +1,5 @@
 import { geminiPro } from '../gemini-enhanced';
+import { safeGenerateContent } from './gemini-utils';
 import { type Primitives } from '../primitives';
 
 interface QualityPrediction {
@@ -39,10 +40,44 @@ Return JSON:
 }`;
 
     try {
-        const result = await geminiPro.generateContent(prompt);
+        const result = await safeGenerateContent(geminiPro, prompt, {
+            responseSchema: {
+                type: 'object',
+                properties: {
+                    predicted_quality: { type: 'number' },
+                    confidence: { type: 'number' },
+                    risk_factors: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                primitive: { type: 'string' },
+                                risk_level: { type: 'string', enum: ['low', 'medium', 'high'] },
+                                reason: { type: 'string' }
+                            },
+                            required: ['primitive', 'risk_level', 'reason']
+                        }
+                    },
+                    recommended_adjustments: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                primitive: { type: 'string' },
+                                current: { type: 'number' },
+                                recommended: { type: 'number' },
+                                expected_improvement: { type: 'number' }
+                            },
+                            required: ['primitive', 'current', 'recommended', 'expected_improvement']
+                        }
+                    }
+                },
+                required: ['predicted_quality', 'confidence', 'risk_factors', 'recommended_adjustments']
+            }
+        });
+
         const text = result.response.text();
-        const cleanText = text.replace(/```json\n?|\n?```/g, '');
-        return JSON.parse(cleanText);
+        return JSON.parse(text);
     } catch (e) {
         console.error('Quality prediction failed:', e);
         return {
