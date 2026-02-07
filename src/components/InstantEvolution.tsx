@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { usePipeline } from '../contexts/PipelineContext';
+import { getApiBaseUrl } from '../lib/utils';
 
 const TEST_SCENARIOS = [
     {
@@ -38,9 +39,7 @@ export function InstantEvolution() {
 
         try {
             // In Vite/Express, APIs are at http://localhost:5174/api/...
-            const baseUrl = window.location.origin.includes('localhost')
-                ? window.location.origin.replace(/:[0-9]+/, ':5174')
-                : '';
+            const baseUrl = getApiBaseUrl();
             const response = await fetch(`${baseUrl}/api/generate-unified`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

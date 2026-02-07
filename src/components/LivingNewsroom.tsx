@@ -28,6 +28,7 @@ import { ForensicAudit } from './ForensicAudit';
 import { PrimitiveSliders } from './PrimitiveSliders';
 import { InstantEvolution } from './InstantEvolution';
 import { usePipeline } from '../contexts/PipelineContext';
+import { getApiBaseUrl } from '../lib/utils';
 
 
 
@@ -864,9 +865,7 @@ export default function LivingRoom() {
         startRun();
 
         try {
-            const baseUrl = window.location.origin.includes('localhost')
-                ? window.location.origin.replace(/:[0-9]+/, ':5174')
-                : '';
+            const baseUrl = getApiBaseUrl();
             const response = await fetch(`${baseUrl}/api/generate-unified`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -997,9 +996,7 @@ export default function LivingRoom() {
             setPrimitives((prev: any) => ({ ...prev, [name]: value }));
 
             // In Vite/Express, APIs are at http://localhost:5174/api/...
-            const baseUrl = window.location.origin.includes('localhost')
-                ? window.location.origin.replace(/:[0-9]+/, ':5174')
-                : '';
+            const baseUrl = getApiBaseUrl();
             await fetch(`${baseUrl}/api/primitives`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

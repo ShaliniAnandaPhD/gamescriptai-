@@ -23,7 +23,7 @@ import { getNarrativeContinuity } from "./lib/contextual-memory";
 import { runUnifiedPipeline } from "./lib/pipeline-orchestrator";
 import { kv } from "@vercel/kv";
 
-const app = express();
+export const app = express();
 app.use(cors());
 app.use(express.json({ limit: "5mb" })); // Increased limit for images
 
@@ -264,9 +264,12 @@ app.post("/api/test/reset", async (req, res) => {
 
 // ── boot ──────────────────────────────────────────────────────────────────
 const PORT = 5174;
-app.listen(PORT, () => {
-    console.log(`\n🚀 Express server on http://localhost:${PORT}`);
-    console.log(`📊 W&B:  ${process.env.WANDB_API_KEY ? "✅ configured" : "❌ missing"}`);
-    console.log(`🤖 HF:   ${process.env.HF_API_KEY ? "✅ configured" : "❌ missing"}`);
-    console.log(`🔗 Weave sidecar: http://localhost:5199  (start with: python server/wandb_sidecar.py --server)\n`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`\n🚀 Express server on http://localhost:${PORT}`);
+        console.log(`📊 W&B:  ${process.env.WANDB_API_KEY ? "✅ configured" : "❌ missing"}`);
+        console.log(`🤖 HF:   ${process.env.HF_API_KEY ? "✅ configured" : "❌ missing"}`);
+        console.log(`🔗 Weave sidecar: http://localhost:5199  (start with: python server/wandb_sidecar.py --server)\n`);
+    });
+}
+export default app;

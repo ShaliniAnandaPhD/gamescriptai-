@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getApiBaseUrl } from '../lib/utils';
 
 interface AnalysisResult {
     success: boolean;
@@ -29,7 +30,8 @@ const MultimodalAnalyzer: React.FC = () => {
         if (!image) return;
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:5174/api/multimodal', {
+            const baseUrl = getApiBaseUrl();
+            const res = await fetch(`${baseUrl}/api/multimodal`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image: image, analysisType: type }),
@@ -76,8 +78,8 @@ const MultimodalAnalyzer: React.FC = () => {
                                 key={t}
                                 onClick={() => setType(t)}
                                 className={`flex-1 py-2 rounded-lg text-[10px] font-mono border transition-all ${type === t
-                                        ? 'bg-blue-600/20 border-blue-500 text-blue-400'
-                                        : 'bg-white/5 border-white/5 text-gray-500 hover:border-white/10'
+                                    ? 'bg-blue-600/20 border-blue-500 text-blue-400'
+                                    : 'bg-white/5 border-white/5 text-gray-500 hover:border-white/10'
                                     }`}
                             >
                                 {t.toUpperCase()}
@@ -89,8 +91,8 @@ const MultimodalAnalyzer: React.FC = () => {
                         onClick={runAnalysis}
                         disabled={!image || loading}
                         className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${!image || loading
-                                ? 'bg-white/5 text-gray-600 cursor-not-allowed'
-                                : 'bg-blue-600 text-white hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)]'
+                            ? 'bg-white/5 text-gray-600 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)]'
                             }`}
                     >
                         {loading ? 'ANALYZING...' : 'RUN GEMINI ANALYSIS'}

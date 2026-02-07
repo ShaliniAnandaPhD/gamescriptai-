@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { usePipeline } from '../contexts/PipelineContext';
+import { getApiBaseUrl } from '../lib/utils';
 
 export default function TestWithAnyIdeaCard({ episodes }: { episodes: any[] }) {
     const [topic, setTopic] = useState('');
@@ -11,9 +12,7 @@ export default function TestWithAnyIdeaCard({ episodes }: { episodes: any[] }) {
         startRun();
 
         try {
-            const baseUrl = window.location.origin.includes('localhost')
-                ? window.location.origin.replace(/:[0-9]+/, ':5174')
-                : '';
+            const baseUrl = getApiBaseUrl();
 
             const response = await fetch(`${baseUrl}/api/generate-unified`, {
                 method: 'POST',
