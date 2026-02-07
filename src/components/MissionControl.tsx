@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Activity, Zap, Users, Brain, Shuffle } from 'lucide-react';
+import { usePipeline } from '../contexts/PipelineContext';
 
-interface PipelineStage {
+interface Stage {
     id: string;
     name: string;
     icon: any;
@@ -11,13 +12,9 @@ interface PipelineStage {
     latency?: number;
 }
 
-interface MissionControlProps {
-    runContext?: any; // Pass run context from parent
-    isRunning?: boolean;
-}
-
-export function MissionControl({ runContext, isRunning = false }: MissionControlProps) {
-    const [stages, setStages] = useState<PipelineStage[]>([
+export function MissionControl() {
+    const { currentRun, isRunning } = usePipeline();
+    const [stages, setStages] = useState<Stage[]>([
         { id: 'predict', name: 'Predict', icon: Activity, status: 'idle' },
         { id: 'generate', name: 'Generate', icon: Zap, status: 'idle' },
         { id: 'evaluate', name: 'Evaluate', icon: Users, status: 'idle' },
@@ -26,54 +23,59 @@ export function MissionControl({ runContext, isRunning = false }: MissionControl
     ]);
 
     useEffect(() => {
-        if (!runContext) return;
+        if (!currentRun) {
+            if (!isRunning) {
+                // Reset to idle when no run and not running
+                setStages(prev => prev.map(s => ({ ...s, status: 'idle', latency: undefined })));
+            }
+            return;
+        }
 
-        // Update stages based on run context
-        const updated = stages.map(stage => {
-            if (runContext.prediction && stage.id === 'predict') {
-                return { ...stage, status: 'complete' as const, latency: runContext.prediction.latency_ms };
+        // Update stages based on current run
+        setStages(prev => prev.map(stage => {
+            if (stage.id === 'predict' && currentRun.prediction) {
+                return { ...stage, status: 'complete' as const, latency: currentRun.prediction.latency_ms };
             }
-            if (runContext.generation && stage.id === 'generate') {
-                return { ...stage, status: 'complete' as const, latency: runContext.generation.latency_ms };
+            if (stage.id === 'generate' && currentRun.generation) {
+                return { ...stage, status: 'complete' as const, latency: currentRun.generation.latency_ms };
             }
-            if (runContext.consensus && stage.id === 'evaluate') {
-                const status: 'complete' | 'failed' = runContext.consensus.gate_passed ? 'complete' : 'failed';
+            if (stage.id === 'evaluate' && currentRun.consensus) {
                 return {
                     ...stage,
-                    status,
-                    latency: runContext.consensus.latency_ms
+                    status: (currentRun.consensus.gate_passed ? 'complete' : 'failed') as 'complete' | 'failed',
+                    latency: currentRun.consensus.latency_ms,
                 };
             }
-            if (runContext.meta_learning && stage.id === 'meta-learn') {
-                return { ...stage, status: 'complete' as const, latency: runContext.meta_learning.latency_ms };
+            if (stage.id === 'meta-learn' && currentRun.meta_learning) {
+                return { ...stage, status: 'complete' as const, latency: currentRun.meta_learning.latency_ms };
             }
-            if (runContext.mutation && stage.id === 'mutate') {
-                return { ...stage, status: 'complete' as const, latency: runContext.mutation.latency_ms };
+            if (stage.id === 'mutate' && currentRun.mutation) {
+                return { ...stage, status: 'complete' as const, latency: currentRun.mutation.latency_ms };
             }
             return stage;
-        });
-
-        setStages(updated);
-    }, [runContext]);
+        }));
+    }, [currentRun, isRunning]);
 
     useEffect(() => {
-        if (isRunning) {
-            // Simulate stage progression if running
+        if (isRunning && !currentRun) {
+            // Simulation loop for stages while the request is out
             let currentStage = 0;
             const interval = setInterval(() => {
                 if (currentStage < stages.length) {
-                    setStages(prev => prev.map((stage, idx) => ({
-                        ...stage,
-                        status: idx === currentStage ? 'active' : idx < currentStage ? 'complete' : 'idle'
-                    })));
+                    setStages(prev =>
+                        prev.map((stage, idx) => ({
+                            ...stage,
+                            status: idx === currentStage ? 'active' as const : idx < currentStage ? 'complete' as const : 'idle' as const,
+                        }))
+                    );
                     currentStage++;
                 } else {
                     clearInterval(interval);
                 }
-            }, 800);
+            }, 600);
             return () => clearInterval(interval);
         }
-    }, [isRunning]);
+    }, [isRunning, currentRun]);
 
     return (
         <div className="bg-gray-900/50 border border-blue-900/50 rounded-2xl p-6">
@@ -83,27 +85,32 @@ export function MissionControl({ runContext, isRunning = false }: MissionControl
             </div>
 
             <div className="flex flex-col gap-4">
-                {stages.map((stage, idx) => {
+                {stages.map((stage) => {
                     const Icon = stage.icon;
 
                     return (
                         <div key={stage.id} className="flex items-center gap-4">
-                            {/* Stage Icon */}
-                            <div className={`
+                            <div
+                                className={`
                 w-16 h-16 rounded-xl flex items-center justify-center transition-all
                 ${stage.status === 'idle' ? 'bg-gray-800 border-2 border-gray-700' : ''}
                 ${stage.status === 'active' ? 'bg-blue-900/50 border-2 border-blue-500 animate-pulse' : ''}
                 ${stage.status === 'complete' ? 'bg-green-900/50 border-2 border-green-500' : ''}
                 ${stage.status === 'failed' ? 'bg-red-900/50 border-2 border-red-500' : ''}
-              `}>
-                                <Icon className={`w-8 h-8 ${stage.status === 'idle' ? 'text-gray-600' :
-                                    stage.status === 'active' ? 'text-blue-400' :
-                                        stage.status === 'complete' ? 'text-green-400' :
-                                            'text-red-400'
-                                    }`} />
+              `}
+                            >
+                                <Icon
+                                    className={`w-8 h-8 ${stage.status === 'idle'
+                                            ? 'text-gray-600'
+                                            : stage.status === 'active'
+                                                ? 'text-blue-400'
+                                                : stage.status === 'complete'
+                                                    ? 'text-green-400'
+                                                    : 'text-red-400'
+                                        }`}
+                                />
                             </div>
 
-                            {/* Stage Info */}
                             <div className="flex-1">
                                 <div className="font-semibold text-white">{stage.name}</div>
                                 <div className="text-sm text-gray-400">
@@ -115,56 +122,52 @@ export function MissionControl({ runContext, isRunning = false }: MissionControl
                                 </div>
                             </div>
 
-                            {/* Status Badge */}
                             <div className="text-right">
-                                {stage.status === 'complete' && (
-                                    <span className="text-2xl">✓</span>
-                                )}
-                                {stage.status === 'failed' && (
-                                    <span className="text-2xl">✗</span>
-                                )}
+                                {stage.status === 'complete' && <span className="text-2xl text-green-400">✓</span>}
+                                {stage.status === 'failed' && <span className="text-2xl text-red-400">✗</span>}
                                 {stage.status === 'active' && (
                                     <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
                                 )}
                             </div>
-
-                            {/* Connector Line */}
-                            {idx < stages.length - 1 && (
-                                <div className="absolute left-8 mt-20 w-0.5 h-8 bg-gray-700" />
-                            )}
                         </div>
                     );
                 })}
             </div>
 
             {/* Summary */}
-            {runContext && (
-                <div className="mt-6 pt-6 border-t border-gray-700">
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                            <div className="text-gray-500">Status</div>
-                            <div className={`font-bold ${runContext.final_status === 'passed' ? 'text-green-400' :
-                                runContext.final_status === 'improved' ? 'text-yellow-400' :
-                                    'text-red-400'
-                                }`}>
-                                {runContext.final_status?.toUpperCase() || 'PENDING'}
-                            </div>
+            <div className="mt-6 pt-6 border-t border-gray-700">
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <div className="text-gray-500 mb-1">Status</div>
+                        <div
+                            className={`font-bold ${isRunning
+                                    ? 'text-blue-400'
+                                    : currentRun?.final_status === 'passed'
+                                        ? 'text-green-400'
+                                        : currentRun?.final_status === 'improved'
+                                            ? 'text-yellow-400'
+                                            : currentRun?.final_status === 'failed'
+                                                ? 'text-red-400'
+                                                : 'text-gray-600'
+                                }`}
+                        >
+                            {isRunning ? 'IN_PROGRESS' : currentRun?.final_status?.toUpperCase() || 'IDLE'}
                         </div>
-                        <div>
-                            <div className="text-gray-500">Total Time</div>
-                            <div className="font-bold text-white">
-                                {runContext.total_latency_ms || '—'}ms
-                            </div>
+                    </div>
+                    <div>
+                        <div className="text-gray-500 mb-1">Total Time</div>
+                        <div className="font-bold text-white">
+                            {currentRun?.total_latency_ms ? `${currentRun.total_latency_ms}ms` : '—'}
                         </div>
-                        <div>
-                            <div className="text-gray-500">Run ID</div>
-                            <div className="font-mono text-xs text-gray-400">
-                                {runContext.run_id?.substring(0, 8) || '—'}
-                            </div>
+                    </div>
+                    <div>
+                        <div className="text-gray-500 mb-1">Run ID</div>
+                        <div className="font-mono text-xs text-gray-400">
+                            {currentRun?.run_id ? currentRun.run_id.substring(0, 8) : 'pending—'}
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 }

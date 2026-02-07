@@ -26,6 +26,7 @@ import { MissionControl } from './MissionControl';
 import { ForensicAudit } from './ForensicAudit';
 import { PrimitiveSliders } from './PrimitiveSliders';
 import { InstantEvolution } from './InstantEvolution';
+import { usePipeline } from '../contexts/PipelineContext';
 
 
 
@@ -509,7 +510,7 @@ export default function LivingRoom() {
     const [runningCustom, setRunningCustom] = useState(false);
     const [customTopic, setCustomTopic] = useState("");
     const [lastResult, setLastResult] = useState<any>(null);
-    const [runContext, setRunContext] = useState<any>(null);
+    const { currentRun: runContext, isRunning } = usePipeline();
 
     const [geminiKey, setGeminiKey] = useState('');
     const [geminiModel, setGeminiModel] = useState('gemini-2.0-flash-exp');
@@ -637,7 +638,7 @@ export default function LivingRoom() {
             typeof ep?.issues_count === "number" ? ep.issues_count : 0
         )
     );
-    const [isRunning, setIsRunning] = useState(false);
+    // isRunning now comes from context
 
     const handleScenario = async (scenarioId: number) => {
         setRunningScenario(true);
@@ -1117,16 +1118,7 @@ export default function LivingRoom() {
 
                 {/* 2.5 INSTANT EVOLUTION DEMO (NEW) */}
                 <div className="mb-12">
-                    <InstantEvolution
-                        onStart={() => {
-                            setIsRunning(true);
-                            setRunContext({ final_status: 'in_progress', run_id: 'pending-' + Date.now(), topic: 'evolution_demo' });
-                        }}
-                        onComplete={(context) => {
-                            setIsRunning(false);
-                            setRunContext(context);
-                        }}
-                    />
+                    <InstantEvolution />
                 </div>
 
                 {/* 3. NEURAL PIPELINE & MISSION CONTROL (NEW) */}
@@ -1134,7 +1126,7 @@ export default function LivingRoom() {
                     <div className="text-gemini-blue font-mono text-xs mb-4 tracking-widest uppercase font-bold">
                         Section 3: Neural Pipeline & Mission Control
                     </div>
-                    <MissionControl runContext={runContext} isRunning={isRunning} />
+                    <MissionControl />
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
                         <PrimitiveSliders
@@ -1142,7 +1134,7 @@ export default function LivingRoom() {
                             highlightMutations={runContext?.mutation?.mutations_applied.map((m: any) => m.primitive) || []}
                             onUpdate={handlePrimitiveUpdate}
                         />
-                        <ForensicAudit runContext={runContext} />
+                        <ForensicAudit />
                     </div>
                 </div>
 

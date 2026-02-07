@@ -4,6 +4,8 @@ import App from './App'
 import './index.css'
 import { logEnvCheck } from './debug/envCheck'
 
+import { PipelineProvider } from './contexts/PipelineContext'
+
 if (import.meta.env.DEV) {
   logEnvCheck();
 }
@@ -19,7 +21,9 @@ try {
 
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
-      <App />
+      <PipelineProvider>
+        <App />
+      </PipelineProvider>
     </React.StrictMode>,
   )
   console.log("✅ Main render triggered");
