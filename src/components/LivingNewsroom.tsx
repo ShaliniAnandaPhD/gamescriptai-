@@ -510,7 +510,7 @@ export default function LivingRoom() {
     const [runningCustom, setRunningCustom] = useState(false);
     const [customTopic, setCustomTopic] = useState("");
     const [lastResult, setLastResult] = useState<any>(null);
-    const { currentRun: runContext, isRunning } = usePipeline();
+    const { currentRun: runContext, isRunning, startRun, completeRun } = usePipeline();
 
     const [geminiKey, setGeminiKey] = useState('');
     const [geminiModel, setGeminiModel] = useState('gemini-2.0-flash-exp');
@@ -643,6 +643,7 @@ export default function LivingRoom() {
     const handleScenario = async (scenarioId: number) => {
         setRunningScenario(true);
         setLastResult(null);
+        startRun();
 
         const scenarios: Record<number, any> = {
             1: {
@@ -650,7 +651,7 @@ export default function LivingRoom() {
                 topic: "Secret trade: Brock Purdy to New York Jets happening today",
                 factScore: 45,
                 styleScore: 100,
-                finalScore: 59,
+                finalScore: 89,
                 issues: [{ type: "hallucination", reason: "Brock Purdy trade is unverified", severity: "high" }],
                 mutations: [
                     {
@@ -735,6 +736,12 @@ export default function LivingRoom() {
         };
 
         const scenario = scenarios[scenarioId];
+        if (!scenario) return;
+
+        startRun();
+
+        // Mock processing time
+        await new Promise(r => setTimeout(r, 2000));
 
         try {
             const metricsRef = doc(db, "system", "metrics");
@@ -789,12 +796,56 @@ export default function LivingRoom() {
                 updated_at: serverTimestamp(),
             });
 
-            setLastResult({
-                episode: episodeNum,
-                scenario: scenario.name,
-                mutations: scenario.mutations,
-            });
+            const mockContext = {
+                run_id: `run_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                timestamp: new Date().toISOString(),
+                episode_number: episodeNum,
+                topic: scenario.topic,
+                final_status: 'improved' as const,
+                total_latency_ms: 2450,
+                prediction: { latency_ms: 230, predicted_quality: 0.85, confidence: 0.9, engine: 'predictive-quality' as const, predicted_pass: true, risk_factors: [], recommended_adjustments: [] },
+                generation: { latency_ms: 820, script: scenario.final_content.text, engine: 'generation' as const, model: 'gemini-2.0-flash', draft_id: 'd1', word_count: 50, estimated_duration_seconds: 30, primitives_snapshot: {}, primitives_hash: 'h1' },
+                consensus: {
+                    latency_ms: 540,
+                    consensus_score: scenario.finalScore,
+                    gate_passed: true,
+                    final_vote: 'pass' as const,
+                    engine: 'multi-agent-consensus' as const,
+                    consensus_strength: 0.9,
+                    disputed_primitives: [],
+                    agent_votes: {
+                        strict_critic: { score: 0.8, vote: 'pass' as const, complaint: '', examples: [] },
+                        balanced_judge: { score: 0.9, vote: 'pass' as const, reasoning: '' },
+                        optimistic_reviewer: { score: 0.95, vote: 'pass' as const, praise: '' }
+                    }
+                },
+                meta_learning: { latency_ms: 450, reasoning: 'System detected hallucination pattern.', engine: 'meta-learning' as const, correlations_analyzed: 12, patterns_matched: [], historical_effectiveness: [], recommended_mutation_size: 0.05, confidence: 0.9 },
+                mutation: {
+                    latency_ms: 120,
+                    mutations_applied: scenario.mutations.map((m: any) => ({
+                        primitive: m.primitive_name,
+                        old_value: m.old_weight,
+                        new_value: m.new_weight,
+                        delta: m.delta,
+                        reason: m.reason,
+                        severity: 0.5,
+                        meta_learning_informed: true
+                    })),
+                    total_mutations: scenario.mutations.length,
+                    expected_improvement: 15,
+                    engine: 'adaptive-mutation' as const
+                },
+                regeneration: {
+                    latency_ms: 1200,
+                    new_script: scenario.final_content.text,
+                    new_quality: scenario.finalScore,
+                    improvement: scenario.finalScore - scenario.factScore,
+                    attempts: 1
+                }
+            };
 
+            completeRun(mockContext);
+            setLastResult(scenario);
             window.scrollTo({ top: 0, behavior: "smooth" });
         } catch (error) {
             console.error("Error:", error);
@@ -809,128 +860,41 @@ export default function LivingRoom() {
 
         setRunningCustom(true);
         const topic = customTopic.trim();
+        startRun();
 
-        // Log token check at runtime via HF call
         try {
-            await callHuggingFace(`Summarize the relevance of ${topic} to AI ethics in one sentence.`);
-            await callGemini(`Provide a brief analysis of ${topic} for a news summary.`);
+            const baseUrl = window.location.origin.includes('localhost')
+                ? window.location.origin.replace(/:[0-9]+/, ':5174')
+                : '';
+            const response = await fetch(`${baseUrl}/api/generate-unified`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ topic }),
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.context) {
+                completeRun(data.context);
+                setLastResult({
+                    name: "Custom Test",
+                    topic: topic,
+                    finalScore: data.context.consensus?.consensus_score || 0,
+                    final_content: { text: data.context.generation?.script || "" }
+                });
+                setCustomTopic("");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            } else {
+                completeRun(null);
+            }
         } catch (e) {
             console.error("AI Service Test Call Failed:", e);
-        }
-
-
-        try {
-            const metricsRef = doc(db, "system", "metrics");
-            const metricsDoc = await getDoc(metricsRef);
-            const metricsData = metricsDoc.exists()
-                ? (metricsDoc.data() as any)
-                : { total_episodes: 0, total_optimizations: 0 };
-
-            const episodeNum = toNumberSafe(metricsData.total_episodes, 0) + 1;
-
-            const primitivesRef = doc(db, "system", "primitives");
-            const primitivesDoc = await getDoc(primitivesRef);
-            const primitivesData = primitivesDoc.exists()
-                ? ((primitivesDoc.data() as any)?.primitives || {})
-                : {};
-
-            const topicLower = topic.toLowerCase();
-            let factScore = 100;
-            let styleScore = 100;
-            const issues: any[] = [];
-            const mutations: any[] = [];
-
-            if (
-                topicLower.includes("gpt-5") ||
-                topicLower.includes("gpt-6") ||
-                topicLower.includes("gpt-7") ||
-                topicLower.includes("llama 4") ||
-                topicLower.includes("llama 5")
-            ) {
-                factScore = 50;
-                issues.push({ type: "hallucination", reason: "Product does not exist", severity: "high" });
-
-                const oldWeight = toNumberSafe(primitivesData?.fact_verification?.weight, 0.65);
-                const newWeight = Math.min(1.0, oldWeight + 0.15);
-
-                primitivesData.fact_verification = primitivesData.fact_verification || {};
-                primitivesData.fact_verification.weight = newWeight;
-
-                mutations.push({
-                    primitive_name: "fact_verification",
-                    old_weight: oldWeight,
-                    new_weight: newWeight,
-                    delta: newWeight - oldWeight,
-                    reason: "Hallucination detected",
-                });
-            }
-
-            if (
-                topicLower.includes("revolutionary") ||
-                topicLower.includes("breakthrough") ||
-                topicLower.includes("game-changing") ||
-                topicLower.includes("unprecedented") ||
-                topicLower.includes("earth-shattering")
-            ) {
-                styleScore = 70;
-                issues.push({ type: "hyperbole", reason: "Excessive superlatives", severity: "medium" });
-
-                if (primitivesData.anti_hyperbole) {
-                    const oldWeight = toNumberSafe(primitivesData.anti_hyperbole.weight, 0.75);
-                    const newWeight = Math.min(1.0, oldWeight + 0.1);
-                    primitivesData.anti_hyperbole.weight = newWeight;
-
-                    mutations.push({
-                        primitive_name: "anti_hyperbole",
-                        old_weight: oldWeight,
-                        new_weight: newWeight,
-                        delta: newWeight - oldWeight,
-                        reason: "Strengthened hyperbole guardrail",
-                    });
-                }
-            }
-
-            const finalScore = Math.round(factScore * 0.7 + styleScore * 0.3);
-
-            await setDoc(doc(db, "episodes", `ep_${episodeNum}`), {
-                episode_num: episodeNum,
-                topic,
-                quality_score: finalScore,
-                issues_count: issues.length,
-                optimized: mutations.length > 0,
-                timestamp: serverTimestamp(),
-                metadata: {
-                    fact_score: factScore,
-                    style_score: styleScore,
-                    confidence: finalScore,
-                    gate_passed: finalScore >= 70,
-                    mutations,
-                    custom_input: true,
-                },
-            });
-
-            await setDoc(primitivesRef, {
-                primitives: primitivesData,
-                updated_at: serverTimestamp(),
-            });
-
-            await setDoc(metricsRef, {
-                total_episodes: episodeNum,
-                total_optimizations:
-                    toNumberSafe(metricsData.total_optimizations, 0) + (mutations.length > 0 ? 1 : 0),
-                primitives_count: Object.keys(primitivesData).length,
-                updated_at: serverTimestamp(),
-            });
-
-            setCustomTopic("");
-            window.scrollTo({ top: 0, behavior: "smooth" });
-        } catch (error) {
-            console.error("Error:", error);
-            alert("Error running test");
+            completeRun(null);
         } finally {
             setRunningCustom(false);
         }
     };
+
 
     const handleRunHuggingFace = async (topicArg?: string) => {
         const topicToRun = typeof topicArg === "string" ? topicArg : customTopic;

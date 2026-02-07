@@ -1,15 +1,14 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
+import { usePipeline } from '../contexts/PipelineContext';
 
 export default function TestWithAnyIdeaCard({ episodes }: { episodes: any[] }) {
-    const [topic, setTopic] = useState("");
-    const [isRunning, setIsRunning] = useState(false);
-    const [result, setResult] = useState<any>(null);
+    const [topic, setTopic] = useState('');
+    const { startRun, completeRun, isRunning, currentRun: result } = usePipeline();
 
     const onRun = async (topic: string) => {
-        setIsRunning(true);
-        setResult(null);
+        startRun();
 
         try {
             const baseUrl = window.location.origin.includes('localhost')
@@ -23,16 +22,16 @@ export default function TestWithAnyIdeaCard({ episodes }: { episodes: any[] }) {
             });
 
             const data = await response.json();
-            if (data.success) {
-                setResult(data.context);
+            if (data.success && data.context) {
+                completeRun(data.context);
             } else {
-                alert('Pipeline failed: ' + data.error);
+                completeRun(null);
+                alert('Pipeline failed: ' + (data.error || 'Unknown error'));
             }
         } catch (error) {
             console.error('Test failed:', error);
+            completeRun(null);
             alert('Test failed. Check console.');
-        } finally {
-            setIsRunning(false);
         }
     };
 
@@ -98,15 +97,15 @@ export default function TestWithAnyIdeaCard({ episodes }: { episodes: any[] }) {
                                     <div className="flex justify-between items-center border-b border-gray-900 pb-3">
                                         <span className="text-xs text-gray-400 uppercase font-bold">Status</span>
                                         <span className={`text-xs font-black uppercase tracking-widest ${result.final_status === 'passed' ? 'text-emerald-400' :
-                                                result.final_status === 'improved' ? 'text-yellow-400' :
-                                                    'text-rose-400'
+                                            result.final_status === 'improved' ? 'text-yellow-400' :
+                                                'text-rose-400'
                                             }`}>
                                             {result.final_status}
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center border-b border-gray-900 pb-3">
                                         <span className="text-xs text-gray-400 uppercase font-bold">Quality</span>
-                                        <span className="text-sm font-black text-blue-400">{result.final_quality?.toFixed(1) || 'N/A'}</span>
+                                        <span className="text-sm font-black text-blue-400">{result.consensus?.consensus_score?.toFixed(1) || 'N/A'}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-xs text-gray-400 uppercase font-bold">Latency</span>
@@ -119,7 +118,7 @@ export default function TestWithAnyIdeaCard({ episodes }: { episodes: any[] }) {
                             <div className="bg-gray-950/60 border border-gray-800 rounded-2xl p-6 overflow-hidden">
                                 <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Final Output</h4>
                                 <div className="text-sm text-gray-300 font-serif italic leading-relaxed line-clamp-4">
-                                    "{result.generation?.script || result.regeneration?.new_script}"
+                                    "{result.regeneration?.new_script || result.generation?.script}"
                                 </div>
                             </div>
                         </div>
