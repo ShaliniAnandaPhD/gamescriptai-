@@ -151,7 +151,7 @@ export function RunContextViewer({ context }: { context: any }) {
                         status="complete"
                     >
                         <div className="space-y-4">
-                            {context.mutation?.mutations_applied.map((mut: any, idx: number) => (
+                            {context.mutation?.mutations_applied?.map((mut: any, idx: number) => (
                                 <div key={idx} className="flex items-center justify-between p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
                                     <div className="text-xs font-bold text-yellow-500 uppercase">{mut.primitive}</div>
                                     <div className="text-xs font-mono text-gray-400">

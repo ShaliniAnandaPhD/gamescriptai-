@@ -130,7 +130,7 @@ export default function TestWithAnyIdeaCard({ episodes }: { episodes: any[] }) {
                                     <span className="animate-pulse">🔄</span> System Learned
                                 </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {result.mutation.mutations_applied.map((mut: any, idx: number) => (
+                                    {result.mutation.mutations_applied?.map((mut: any, idx: number) => (
                                         <div key={idx} className="bg-gray-950/40 border border-gray-800 rounded-lg p-3 flex items-center justify-between">
                                             <span className="text-[10px] font-mono text-yellow-500 uppercase">{mut.primitive}</span>
                                             <div className="flex items-center gap-3">

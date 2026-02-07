@@ -9,6 +9,7 @@ import {
     query,
     serverTimestamp,
     setDoc,
+    increment,
 } from "firebase/firestore";
 // import Plot from "react-plotly.js";
 const Plot = React.lazy(() => import("react-plotly.js"));
@@ -1095,7 +1096,7 @@ export default function LivingRoom() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
                         <PrimitiveSliders
                             primitives={primitives}
-                            highlightMutations={runContext?.mutation?.mutations_applied.map((m: any) => m.primitive) || []}
+                            highlightMutations={runContext?.mutation?.mutations_applied?.map((m: any) => m.primitive) || []}
                             onUpdate={handlePrimitiveUpdate}
                         />
                         <ForensicAudit />
