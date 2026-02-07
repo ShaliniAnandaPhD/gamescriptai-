@@ -24,13 +24,13 @@ const DIFFICULT_PROMPTS = [
     },
 ];
 
-export function InstantEvolution({ onStart, onComplete }: { onStart: () => void, onComplete: (context: any) => void }) {
+export function InstantEvolution({ onStart, onComplete }: { onStart?: () => void, onComplete?: (context: any) => void }) {
     const [selectedPrompt, setSelectedPrompt] = useState(DIFFICULT_PROMPTS[0]);
     const [running, setRunning] = useState(false);
 
     const runDemo = async () => {
         setRunning(true);
-        onStart();
+        onStart?.();
 
         try {
             // In Vite/Express, APIs are at http://localhost:5174/api/...
@@ -45,7 +45,7 @@ export function InstantEvolution({ onStart, onComplete }: { onStart: () => void,
 
             const data = await response.json();
             if (data.success) {
-                onComplete(data.context);
+                onComplete?.(data.context);
             }
         } catch (error) {
             console.error('Demo failed:', error);

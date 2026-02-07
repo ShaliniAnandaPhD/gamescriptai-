@@ -23,8 +23,8 @@ import MultimodalAnalyzer from './MultimodalAnalyzer';
 import MetaLearningDashboard from './MetaLearningDashboard';
 import { Sparkles, Activity, Brain, Database, Zap } from 'lucide-react';
 import { MissionControl } from './MissionControl';
+import { ForensicAudit } from './ForensicAudit';
 import { PrimitiveSliders } from './PrimitiveSliders';
-import { RunContextViewer } from './RunContextViewer';
 import { InstantEvolution } from './InstantEvolution';
 
 
@@ -637,6 +637,7 @@ export default function LivingRoom() {
             typeof ep?.issues_count === "number" ? ep.issues_count : 0
         )
     );
+    const [isRunning, setIsRunning] = useState(false);
 
     const handleScenario = async (scenarioId: number) => {
         setRunningScenario(true);
@@ -1117,8 +1118,14 @@ export default function LivingRoom() {
                 {/* 2.5 INSTANT EVOLUTION DEMO (NEW) */}
                 <div className="mb-12">
                     <InstantEvolution
-                        onStart={() => setRunContext({ final_status: 'in_progress', run_id: 'pending-' + Date.now(), topic: 'evolution_demo' })}
-                        onComplete={(context) => setRunContext(context)}
+                        onStart={() => {
+                            setIsRunning(true);
+                            setRunContext({ final_status: 'in_progress', run_id: 'pending-' + Date.now(), topic: 'evolution_demo' });
+                        }}
+                        onComplete={(context) => {
+                            setIsRunning(false);
+                            setRunContext(context);
+                        }}
                     />
                 </div>
 
@@ -1127,15 +1134,15 @@ export default function LivingRoom() {
                     <div className="text-gemini-blue font-mono text-xs mb-4 tracking-widest uppercase font-bold">
                         Section 3: Neural Pipeline & Mission Control
                     </div>
-                    <MissionControl runContext={runContext} />
+                    <MissionControl runContext={runContext} isRunning={isRunning} />
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
                         <PrimitiveSliders
                             primitives={primitives}
                             highlightMutations={runContext?.mutation?.mutations_applied.map((m: any) => m.primitive) || []}
                             onUpdate={handlePrimitiveUpdate}
                         />
-                        {runContext && <RunContextViewer context={runContext} />}
+                        <ForensicAudit runContext={runContext} />
                     </div>
                 </div>
 
@@ -1703,10 +1710,7 @@ export default function LivingRoom() {
                 </div>
 
                 {/* 5. TEST WITH ANY IDEA */}
-                <TestWithAnyIdeaCard
-                    isRunning={runningGemini}
-                    onRun={handleRunHuggingFace}
-                />
+                <TestWithAnyIdeaCard episodes={episodes} />
             </div>
         </div >
     );
