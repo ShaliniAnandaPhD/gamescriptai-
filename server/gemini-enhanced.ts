@@ -336,7 +336,9 @@ export async function analyzeGameImage(
 function buildGenerationPrompt(topic: string, primitives: Primitives, options?: any): string {
     return `You are a versatile AI analyst and content generator. 
 
-GENERATE CONTENT FOR: "${topic}"
+GENERATE CONTENT FOR THIS EXACT TOPIC: "${topic}"
+
+CRITICAL: You must write about THIS EXACT TOPIC provided above. Do not diverge from this topic. Do not substitute it with another topic like "Brock Purdy" or "NFL" unless that is the topic provided. Accuracy is non-negotiable.
 
 STYLE ADAPTATION:
 - If the topic is sports, use a professional sports broadcaster tone.

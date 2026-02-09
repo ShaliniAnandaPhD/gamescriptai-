@@ -105,6 +105,21 @@ export function MissionControl() {
                 <h3 className="text-xl font-bold text-white tracking-tight">Mission Control: Pipeline Status</h3>
             </div>
 
+            {/* ✅ PROCESSING INDICATOR */}
+            {isRunning && (
+                <div className="mb-6 p-4 bg-blue-900/20 border-2 border-blue-500 rounded-lg animate-pulse">
+                    <div className="flex items-center gap-3">
+                        <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                        <div className="flex-1">
+                            <span className="text-blue-400 font-bold">⚡ Processing Mutation...</span>
+                            <div className="text-[10px] text-blue-300 mt-1 uppercase tracking-widest">
+                                Gemini 3 Pro analyzing behavioral primitives
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col gap-4">
                 {stages.map((stage) => {
                     const Icon = stage.icon;
@@ -122,12 +137,12 @@ export function MissionControl() {
                             >
                                 <Icon
                                     className={`w-8 h-8 ${stage.status === 'idle'
-                                            ? 'text-gray-600'
-                                            : stage.status === 'active'
-                                                ? 'text-blue-400'
-                                                : stage.status === 'complete'
-                                                    ? 'text-green-400'
-                                                    : 'text-red-400'
+                                        ? 'text-gray-600'
+                                        : stage.status === 'active'
+                                            ? 'text-blue-400'
+                                            : stage.status === 'complete'
+                                                ? 'text-green-400'
+                                                : 'text-red-400'
                                         }`}
                                 />
                             </div>
@@ -165,14 +180,14 @@ export function MissionControl() {
                         <div className="text-[10px] text-gray-500 mb-1 uppercase tracking-widest font-black">Status</div>
                         <div
                             className={`text-xs font-black tracking-widest uppercase ${isRunning
-                                    ? 'text-blue-400 animate-pulse'
-                                    : currentRun?.final_status === 'passed'
-                                        ? 'text-green-400'
-                                        : currentRun?.final_status === 'improved'
-                                            ? 'text-yellow-400'
-                                            : currentRun?.final_status === 'failed'
-                                                ? 'text-red-400'
-                                                : 'text-gray-600'
+                                ? 'text-blue-400 animate-pulse'
+                                : currentRun?.final_status === 'passed'
+                                    ? 'text-green-400'
+                                    : currentRun?.final_status === 'improved'
+                                        ? 'text-yellow-400'
+                                        : currentRun?.final_status === 'failed'
+                                            ? 'text-red-400'
+                                            : 'text-gray-600'
                                 }`}
                         >
                             {isRunning ? 'IN_PROGRESS' : currentRun?.final_status?.toUpperCase() || 'IDLE'}

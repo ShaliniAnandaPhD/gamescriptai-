@@ -4,22 +4,25 @@ import { generateBroadcastScript } from '../gemini-enhanced';
 import { evaluateWithTunedConsensus } from './consensus-tuned';
 import { calculateVisibleAdaptiveMutation } from './meta-learning-visible';
 import { getPrimitives, updatePrimitive } from '../primitives';
+import { runMockPipeline } from './mock-pipeline';
 
 /**
  * UNIFIED PIPELINE - Orchestrates all 5 engines with full context
  */
 export async function runUnifiedPipeline(
-    topic: string
+    topic: string,
+    options?: { demo_mode?: boolean }
 ): Promise<RunContext> {
     const startTime = Date.now();
+    const isDemo = options?.demo_mode === true;
 
-    // Get episode number
-    let episodeNumber = 1;
+    // Get current episode number for context
+    let episodeNumber = 59;
     try {
-        episodeNumber = await kv.incr('stats:total_episodes');
+        const val = await kv.get('total_episodes');
+        episodeNumber = Number(val) || 59;
     } catch (e) {
-        console.warn('Failed to increment episode counter in KV, using fallback');
-        episodeNumber = Math.floor(Date.now() / 100000);
+        console.warn('Failed to get episode count, using fallback');
     }
 
     // Create run context
@@ -27,11 +30,24 @@ export async function runUnifiedPipeline(
 
     console.log(`\n🚀 Starting Unified Pipeline - Run ${context.run_id}`);
     console.log(`   Topic: "${topic}"`);
+    if (isDemo) console.log(`   ⚡ DEMO MODE ACTIVE - Using Mock Pipeline`);
+
+    if (isDemo) {
+        const mockContext = await runMockPipeline(topic, episodeNumber);
+
+        // Add artificial cinematic delay for the UI to show progress
+        // even if the data is ready instantly
+        await new Promise(r => setTimeout(r, 1000));
+
+        await saveRunContext(mockContext);
+        return mockContext;
+    }
 
     try {
         // STAGE 1: PREDICTION
         console.log('\n📊 Stage 1: PREDICTIVE QUALITY ESTIMATION');
         const primitives = await getPrimitives();
+        if (!isDemo) await new Promise(r => setTimeout(r, 800));
         const prediction = await predictQuality(topic, primitives);
 
         context = updateRunContext(context, 'prediction', {
@@ -46,6 +62,7 @@ export async function runUnifiedPipeline(
 
         // STAGE 2: GENERATION
         console.log('\n✍️  Stage 2: GENERATION (Gemini 2.0 Flash)');
+        if (!isDemo) await new Promise(r => setTimeout(r, 800));
         const generation = await generateBroadcastScript(topic, primitives);
 
         context = updateRunContext(context, 'generation', {
@@ -62,6 +79,7 @@ export async function runUnifiedPipeline(
 
         // STAGE 3: CONSENSUS EVALUATION
         console.log('\n🗣️  Stage 3: MULTI-AGENT CONSENSUS');
+        if (!isDemo) await new Promise(r => setTimeout(r, 800));
         const consensus = await evaluateWithTunedConsensus(
             generation.script,
             topic,

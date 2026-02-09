@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
+import { usePipeline } from "@/contexts/PipelineContext";
 
 type Episode = {
     id: string | number;
@@ -80,38 +81,22 @@ const PRODUCTION_STATS = {
 };
 
 export default function SystemOutcomesSection(props: { episodes: Episode[] }) {
+    const { episodeCount, mutationCount, gatePassRate, averageQuality, refreshStats } = usePipeline();
+
+    // Fetch initial stats on mount
+    useEffect(() => {
+        refreshStats();
+    }, [refreshStats]);
+
     const stats = useMemo(() => {
-        const eps = props.episodes ?? [];
-        const realCount = eps.length;
-
-        // Use PRODUCTION_STATS if realCount is low/initial, otherwise use real data
-        // For the demo, we prioritize the "58 episodes / 33 updates" narrative
-        const total = Math.max(realCount, PRODUCTION_STATS.total_episodes);
-        const autonomyUpdates = Math.max(
-            eps.reduce((sum, e) => sum + (e.autonomy?.primitive_updates ?? 0), 0),
-            PRODUCTION_STATS.autonomy_updates
-        );
-        const passRate = Math.max(
-            realCount === 0 ? 0 : (eps.filter((e) => Boolean(e.metadata?.gate_passed)).length / realCount),
-            PRODUCTION_STATS.gate_pass_rate
-        );
-        const avgQuality = Math.max(
-            realCount === 0 ? 0 : safeAvg(eps.map((e) => e.quality_score ?? 0)),
-            PRODUCTION_STATS.average_quality
-        );
-        const avgGateConfidence = Math.max(
-            realCount === 0 ? 0 : safeAvg(eps.map((e) => e.metadata?.confidence ?? 0)),
-            PRODUCTION_STATS.avg_gate_confidence
-        );
-
         return {
-            total,
-            passRate,
-            avgQuality,
-            avgGateConfidence,
-            autonomyUpdates,
+            total: episodeCount,
+            passRate: gatePassRate,
+            avgQuality: averageQuality,
+            avgGateConfidence: PRODUCTION_STATS.avg_gate_confidence,
+            autonomyUpdates: mutationCount,
         };
-    }, [props.episodes]);
+    }, [episodeCount, mutationCount, gatePassRate, averageQuality]);
 
     return (
         <section className="mt-14">

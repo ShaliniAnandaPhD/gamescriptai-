@@ -1,11 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePipeline } from '../contexts/PipelineContext';
 
-// FIXED VERSION - DROP THIS INTO YOUR PAGE
 export default function MetaLearningDashboard({ episodes }: { episodes: any[] }) {
+    const { primitives, isRunning, currentRun } = usePipeline();
     const [view, setView] = useState<'empty' | 'correlations' | 'patterns'>('empty');
     const [loading, setLoading] = useState(false);
+    const [activeMutations, setActiveMutations] = useState<string[]>([]);
+
+    // Track active mutations for visual feedback
+    useEffect(() => {
+        if (currentRun?.mutation?.mutations_applied) {
+            const mutatedNames = currentRun.mutation.mutations_applied.map((m: any) => m.primitive);
+            setActiveMutations(mutatedNames);
+            const timer = setTimeout(() => setActiveMutations([]), 5000); // Pulse for 5 seconds
+            return () => clearTimeout(timer);
+        }
+    }, [currentRun]);
 
     const showCorrelations = async () => {
         setLoading(true);
@@ -20,6 +32,25 @@ export default function MetaLearningDashboard({ episodes }: { episodes: any[] })
         await new Promise(r => setTimeout(r, 1500)); // Simulate loading
         setLoading(false);
     };
+
+    // UI helper for primitive cards
+    const PrimitiveCard = ({ name, value, isMutating }: { name: string, value: number, isMutating: boolean }) => (
+        <div className={`relative bg-gray-950/60 border rounded-xl p-4 transition-all duration-700 ${isMutating ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)] scale-[1.02]' : 'border-gray-800'}`}>
+            <div className="flex justify-between items-center mb-2">
+                <span className={`text-[10px] font-black uppercase tracking-[0.15em] ${isMutating ? 'text-amber-400' : 'text-gray-500'}`}>{name.replace(/_/g, ' ')}</span>
+                <span className={`text-xs font-mono font-bold ${isMutating ? 'text-amber-400' : 'text-blue-400'}`}>{value?.toFixed(2) || '0.00'}</span>
+            </div>
+            <div className="h-1.5 w-full bg-gray-900 rounded-full overflow-hidden">
+                <div
+                    className={`h-full transition-all duration-1000 ease-out rounded-full ${isMutating ? 'bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_8px_white]' : 'bg-gradient-to-r from-blue-600 to-indigo-400'}`}
+                    style={{ width: `${(value || 0) * 100}%` }}
+                />
+            </div>
+            {isMutating && (
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-amber-500 rounded-full animate-ping" />
+            )}
+        </div>
+    );
 
     // Hardcoded data (works without API)
     const correlations = [
@@ -47,12 +78,6 @@ export default function MetaLearningDashboard({ episodes }: { episodes: any[] })
             value: -0.91,
             insight: 'Higher fact verification dramatically reduces hallucinations. Keep above 0.80 for critical topics.',
         },
-        {
-            a: 'real_time_momentum',
-            b: 'entertainment_value',
-            value: 0.73,
-            insight: 'Scripts that match game momentum are more entertaining. Sync these primitives together.',
-        },
     ];
 
     const patterns = [
@@ -68,88 +93,113 @@ export default function MetaLearningDashboard({ episodes }: { episodes: any[] })
             success: 22,
             recommendation: 'Default anti_hyperbole to 0.85+ for all sports coverage to prevent hype language',
         },
-        {
-            title: 'Fact verification > 0.85 achieves zero hallucinations',
-            frequency: 31,
-            success: 100,
-            recommendation: 'Maintain fact_verification >0.85 for any content with verifiable claims',
-        },
-        {
-            title: 'Balanced entertainment (0.75-0.85) optimizes engagement',
-            frequency: 27,
-            success: 89,
-            recommendation: 'Avoid extremes—keep entertainment_value in 0.75-0.85 range for best results',
-        },
     ];
+
+    const corePrimitives = ['anti_hyperbole', 'fact_verification', 'source_attribution', 'entertainment_value', 'brevity', 'statistical_depth'];
 
     return (
         <div className="mb-16">
             {/* Header */}
             <div className="text-center mb-8">
-                <div className="text-sm text-blue-400 mb-2 font-mono uppercase tracking-[0.2em]">SECTION 10</div>
-                <h2 className="text-3xl font-bold text-white mb-2">Meta-Learning Engine</h2>
-                <p className="text-sm text-gray-400">VERSION 2.5 SOPHISTICATION ({episodes.length} episodes analyzed)</p>
-                <div className="inline-flex items-center gap-2 mt-3 px-3 py-1 bg-green-900/30 border border-green-600 rounded-full">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                    <span className="text-xs text-green-400 font-semibold uppercase tracking-wider">ONLINE</span>
+                <div className="text-sm text-indigo-400 mb-2 font-mono uppercase tracking-[0.2em] font-black">Cognitive Orchestration Layer</div>
+                <h2 className="text-4xl font-black text-white mb-2 tracking-tighter italic">META-LEARNING ENGINE</h2>
+                <p className="text-sm text-gray-500 font-medium">REAL-TIME WEIGHTS IN REDIS EPISODIC MEMORY</p>
+                <div className="inline-flex items-center gap-2 mt-4 px-4 py-1.5 bg-indigo-900/30 border border-indigo-500/30 rounded-full">
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" />
+                    <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.2em]">NEURON v2.5 ACTIVE</span>
                 </div>
             </div>
 
-            {/* Buttons */}
+            {/* Live Primitives Monitor */}
+            <div className="bg-gray-900/80 border-2 border-indigo-500/20 rounded-2xl p-8 mb-12 shadow-2xl backdrop-blur-xl group overflow-hidden relative">
+                <div className="absolute top-0 right-0 p-4">
+                    <div className="text-[9px] font-mono text-gray-700 uppercase vertical-text tracking-widest leading-none">FORENSIC TELEMETRY STREAM</div>
+                </div>
+
+                <h3 className="text-xs font-black text-white uppercase tracking-[0.3em] mb-8 flex items-center gap-4">
+                    <span className="w-8 h-[1px] bg-indigo-500/50"></span>
+                    Live Behavioral Primitives
+                    <span className="w-8 h-[1px] bg-indigo-500/50"></span>
+                </h3>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    {corePrimitives.map(p => (
+                        <PrimitiveCard
+                            key={p}
+                            name={p}
+                            value={primitives?.[p] || primitives?.[p.toUpperCase()]}
+                            isMutating={activeMutations.includes(p) || activeMutations.includes(p.toUpperCase())}
+                        />
+                    ))}
+                </div>
+
+                {isRunning && (
+                    <div className="absolute inset-0 bg-indigo-900/5 backdrop-blur-[1px] flex items-center justify-center animate-in fade-in duration-500">
+                        <div className="flex items-center gap-3 px-4 py-2 bg-black/80 border border-indigo-500/50 rounded-lg shadow-2xl">
+                            <div className="w-2 h-2 bg-indigo-500 rounded-full animate-ping" />
+                            <span className="text-[10px] text-indigo-400 font-black uppercase tracking-widest">Inference Lock Active</span>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Secondary Analysis Engines */}
             <div className="grid md:grid-cols-2 gap-6 mb-8">
                 <button
                     onClick={showCorrelations}
                     disabled={loading}
                     className={`p-6 rounded-xl border-2 transition-all text-left ${view === 'correlations'
-                            ? 'bg-blue-900/30 border-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.2)]'
-                            : 'bg-gray-800/50 border-gray-700 hover:border-blue-600'
-                        } disabled:opacity-50 disabled:cursor-not-allowed group`}
+                        ? 'bg-blue-900/30 border-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.2)]'
+                        : 'bg-gray-800/50 border-gray-700 hover:border-blue-600'
+                        } disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden`}
                 >
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                    <div className="flex items-center gap-3 mb-3 relative z-10">
+                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/20">
                             🔗
                         </div>
-                        <h3 className="text-lg font-semibold text-white">Discover Correlations</h3>
+                        <h3 className="text-lg font-bold text-white uppercase tracking-tight">Neural Correlations</h3>
                     </div>
-                    <p className="text-sm text-gray-400 mb-3">
-                        Map how primitives influence each other across production episodes.
+                    <p className="text-xs text-gray-500 mb-3 relative z-10 font-medium">
+                        Analyze how primitive weights influence outcome quality.
                     </p>
-                    <div className="text-xs text-blue-400 font-bold uppercase tracking-widest">
-                        Powered by Gemini 3 Pro →
+                    <div className="text-[9px] text-blue-400 font-black uppercase tracking-widest relative z-10">
+                        Compute via Gemini Pro →
                     </div>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -translate-y-16 translate-x-16" />
                 </button>
 
                 <button
                     onClick={showPatterns}
                     disabled={loading}
                     className={`p-6 rounded-xl border-2 transition-all text-left ${view === 'patterns'
-                            ? 'bg-purple-900/30 border-purple-600 shadow-[0_0_20px_rgba(147,51,234,0.2)]'
-                            : 'bg-gray-800/50 border-gray-700 hover:border-purple-600'
-                        } disabled:opacity-50 disabled:cursor-not-allowed group`}
+                        ? 'bg-purple-900/30 border-purple-600 shadow-[0_0_20px_rgba(147,51,234,0.2)]'
+                        : 'bg-gray-800/50 border-gray-700 hover:border-purple-600'
+                        } disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden`}
                 >
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                    <div className="flex items-center gap-3 mb-3 relative z-10">
+                        <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-lg shadow-purple-500/20">
                             📊
                         </div>
-                        <h3 className="text-lg font-semibold text-white">Identify Patterns</h3>
+                        <h3 className="text-lg font-bold text-white uppercase tracking-tight">Success Patterns</h3>
                     </div>
-                    <p className="text-sm text-gray-400 mb-3">
-                        Extract success patterns and configuration guardrails.
+                    <p className="text-xs text-gray-500 mb-3 relative z-10 font-medium">
+                        Extract guardrails from 59 historical production cycles.
                     </p>
-                    <div className="text-xs text-purple-400 font-bold uppercase tracking-widest">
-                        AI-driven insights →
+                    <div className="text-[9px] text-purple-400 font-black uppercase tracking-widest relative z-10">
+                        Pattern extraction active
                     </div>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full -translate-y-16 translate-x-16" />
                 </button>
             </div>
 
             {/* Results Area */}
-            <div className="bg-gray-900/50 border border-gray-700 rounded-xl p-8 min-h-[300px] backdrop-blur-sm">
+            <div className="bg-gray-950/50 border border-gray-800 rounded-2xl p-8 min-h-[300px] backdrop-blur-md shadow-inner">
                 {/* Loading */}
                 {loading && (
                     <div className="flex flex-col items-center justify-center h-[250px]">
-                        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
-                        <p className="text-blue-400 font-mono text-xs uppercase tracking-widest animate-pulse">
-                            Analyzing {view === 'correlations' ? 'neural weights' : 'success patterns'}...
+                        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4" />
+                        <p className="text-indigo-400 font-mono text-[10px] uppercase tracking-widest animate-pulse font-black">
+                            Running Deep Analysis on {view === 'correlations' ? 'Synaptic Weights' : 'Historical Episodes'}...
                         </p>
                     </div>
                 )}
@@ -157,111 +207,91 @@ export default function MetaLearningDashboard({ episodes }: { episodes: any[] })
                 {/* Empty State */}
                 {!loading && view === 'empty' && (
                     <div className="flex flex-col items-center justify-center h-[250px] text-center opacity-40 group">
-                        <div className="text-5xl mb-4 group-hover:scale-110 transition-transform duration-500">🧠</div>
-                        <p className="text-gray-400 mb-1 font-semibold uppercase tracking-widest text-xs">Awaiting Neural Signal</p>
-                        <p className="text-sm text-gray-600">Select an engine above to begin meta-analysis</p>
+                        <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-700 filter grayscale">🧠</div>
+                        <p className="text-gray-500 mb-1 font-black uppercase tracking-[0.25em] text-[10px]">Awaiting Analytical Command</p>
+                        <p className="text-xs text-gray-700 font-medium italic">Select an analysis modality above to begin meta-processing</p>
                     </div>
                 )}
 
                 {/* Correlations View */}
                 {!loading && view === 'correlations' && (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                            <span className="text-blue-500">🔗</span>
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <h3 className="text-sm font-black text-white mb-8 uppercase tracking-[0.2em] flex items-center gap-3">
+                            <span className="w-2 h-2 bg-blue-500 rounded-full" />
                             Discovered Correlations
-                            <span className="text-xs text-gray-500 font-mono font-normal uppercase tracking-widest">
-                                ({correlations.length} relationships mapped)
-                            </span>
                         </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-6">
+                        <div className="grid grid-cols-1 gap-4 mb-6">
                             {correlations.map((corr, idx) => (
                                 <div
                                     key={idx}
-                                    className="bg-gray-950/40 border border-gray-800 rounded-lg p-5 hover:border-blue-600/50 transition-all group"
+                                    className="bg-gray-900/60 border border-gray-800 rounded-xl p-6 hover:border-blue-600/50 transition-all group"
                                 >
-                                    <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center justify-between mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-[10px] font-mono text-blue-400 uppercase tracking-tighter">
+                                            <div className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-[10px] font-mono text-blue-400 uppercase tracking-tighter">
                                                 {corr.a}
                                             </div>
-                                            <span className="text-gray-700 text-xs">↔</span>
-                                            <div className="px-2 py-1 bg-purple-500/10 border border-purple-500/20 rounded text-[10px] font-mono text-purple-400 uppercase tracking-tighter">
+                                            <span className="text-gray-800 text-xs font-black">⊕</span>
+                                            <div className="px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded text-[10px] font-mono text-purple-400 uppercase tracking-tighter">
                                                 {corr.b}
                                             </div>
                                         </div>
-                                        <div className={`text-xl font-black font-mono ${corr.value > 0 ? 'text-emerald-400' : 'text-rose-400'
+                                        <div className={`text-2xl font-black font-mono ${corr.value > 0 ? 'text-emerald-400' : 'text-rose-400'
                                             }`}>
                                             {corr.value > 0 ? '+' : ''}{Math.round(corr.value * 100)}%
                                         </div>
                                     </div>
-                                    <p className="text-xs text-gray-400 leading-relaxed italic border-l-2 border-gray-800 pl-4 py-1">
+                                    <p className="text-xs text-gray-400 leading-relaxed font-medium border-l-2 border-indigo-500/30 pl-6 py-1 italic">
                                         "{corr.insight}"
                                     </p>
                                 </div>
                             ))}
-                        </div>
-
-                        <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg flex items-center gap-3">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                            <p className="text-[10px] text-blue-400 uppercase font-black tracking-widest">
-                                Correlations analyzed across production episodes using Gemini 3 Pro
-                            </p>
                         </div>
                     </div>
                 )}
 
                 {/* Patterns View */}
                 {!loading && view === 'patterns' && (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                            <span className="text-purple-500">📊</span>
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <h3 className="text-sm font-black text-white mb-8 uppercase tracking-[0.2em] flex items-center gap-3">
+                            <span className="w-2 h-2 bg-purple-500 rounded-full" />
                             Success Patterns
-                            <span className="text-xs text-gray-500 font-mono font-normal uppercase tracking-widest">
-                                ({patterns.length} guardrails identified)
-                            </span>
                         </h3>
 
-                        <div className="grid grid-cols-1 gap-4 mb-6">
+                        <div className="grid grid-cols-1 gap-6 mb-6">
                             {patterns.map((pattern, idx) => (
                                 <div
                                     key={idx}
-                                    className="bg-gray-950/40 border border-gray-800 rounded-lg p-5 hover:border-purple-600/50 transition-all"
+                                    className="bg-gray-900/60 border border-gray-800 rounded-xl p-6 hover:border-purple-600/50 transition-all"
                                 >
-                                    <div className="flex items-start justify-between mb-4">
+                                    <div className="flex items-start justify-between mb-6">
                                         <div className="flex-1">
-                                            <div className="font-bold text-gray-200 mb-1 text-sm">
+                                            <div className="font-bold text-gray-100 mb-1 text-sm tracking-tight">
                                                 {pattern.title}
                                             </div>
-                                            <div className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">
-                                                Observed in {pattern.frequency} episodes
+                                            <div className="text-[10px] text-gray-600 font-black uppercase tracking-[0.1em]">
+                                                Observed in {pattern.frequency} production episodes
                                             </div>
                                         </div>
                                         <div className="text-right ml-4">
-                                            <div className={`text-2xl font-black ${pattern.success >= 90 ? 'text-emerald-400' :
-                                                    pattern.success >= 70 ? 'text-yellow-400' :
-                                                        'text-rose-400'
+                                            <div className={`text-4xl font-black font-mono ${pattern.success >= 90 ? 'text-emerald-400' :
+                                                pattern.success >= 70 ? 'text-yellow-400' :
+                                                    'text-rose-400'
                                                 }`}>
                                                 {pattern.success}%
                                             </div>
-                                            <div className="text-[9px] text-gray-600 font-black uppercase tracking-widest">success rate</div>
+                                            <div className="text-[9px] text-gray-700 font-black uppercase tracking-widest mt-1">Success Propensity</div>
                                         </div>
                                     </div>
-                                    <div className="bg-purple-500/5 border border-purple-500/10 rounded-lg p-4 flex items-center gap-4">
-                                        <div className="text-xs text-purple-400/50 font-black uppercase tracking-widest">Rec:</div>
-                                        <div className="text-xs text-purple-400 font-medium tracking-tight">
+                                    <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-lg p-5 flex items-center gap-6">
+                                        <div className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.2em]">Strategy:</div>
+                                        <div className="text-xs text-indigo-200/80 font-medium leading-relaxed">
                                             {pattern.recommendation}
                                         </div>
                                     </div>
                                 </div>
                             ))}
-                        </div>
-
-                        <div className="p-4 bg-purple-500/5 border border-purple-500/20 rounded-lg flex items-center gap-3">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-                            <p className="text-[10px] text-purple-400 uppercase font-black tracking-widest">
-                                Patterns extracted from production episodes with AI-driven insights
-                            </p>
                         </div>
                     </div>
                 )}
