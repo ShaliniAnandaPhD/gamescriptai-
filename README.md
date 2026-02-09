@@ -1,4 +1,4 @@
-# Living Newsroom
+# GameScript AI
 
 An autonomous, self-improving AI generation pipeline with real-time profiling and observability, orchestrated by the [Neuron](https://github.com/ShaliniAnandaPhD/Neuron) cognitive agent framework.
 
@@ -6,7 +6,7 @@ An autonomous, self-improving AI generation pipeline with real-time profiling an
 
 ## Overview
 
-Living Newsroom is a sophisticated AI agent system designed to generate, evaluate, and refine content autonomously. The pipeline is structured as a **Neuron Circuit** — a graph of typed agents connected by a SynapticBus, so every stage (ingest, generate, evaluate, gate, learn) is a first-class agent with its own capabilities, memory access, and routing rules. On top of that, a "True AI Profiling" layer captures ground-truth metrics from the Hugging Face Inference API, enabling precise tracking of model performance, failure chains, and behavioral primitive adaptations.
+GameScript AI is a sophisticated AI agent system designed to generate, evaluate, and refine content autonomously. The pipeline is structured as a **Neuron Circuit** — a graph of typed agents connected by a SynapticBus, so every stage (ingest, generate, evaluate, gate, learn) is a first-class agent with its own capabilities, memory access, and routing rules. On top of that, a "True AI Profiling" layer captures ground-truth metrics from the Hugging Face Inference API, enabling precise tracking of model performance, failure chains, and behavioral primitive adaptations.
 
 ---
 
