@@ -1,6 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
 import { kv as vercelKv } from '@vercel/kv';
 import weave from 'weave';
+import Redis from 'ioredis';
+
+// Standard Redis client if needed
+let redisClient: Redis | null = null;
+if (process.env.REDIS_URL && !process.env.KV_REST_API_URL) {
+    redisClient = new Redis(process.env.REDIS_URL);
+}
 
 // Fallback for local development without Vercel KV
 const memoryStore: Record<string, any> = {
@@ -73,8 +80,13 @@ const memoryStore: Record<string, any> = {
 export const kv = {
     lpush: async (key: string, value: string) => {
         try {
-            if (!process.env.KV_REST_API_URL) throw new Error("Local");
-            return await vercelKv.lpush(key, value);
+            if (process.env.KV_REST_API_URL) {
+                return await vercelKv.lpush(key, value);
+            }
+            if (redisClient) {
+                return await redisClient.lpush(key, value);
+            }
+            throw new Error("Local");
         } catch (e) {
             memoryStore[key] = memoryStore[key] || [];
             if (Array.isArray(memoryStore[key])) {
@@ -85,8 +97,13 @@ export const kv = {
     },
     ltrim: async (key: string, start: number, stop: number) => {
         try {
-            if (!process.env.KV_REST_API_URL) throw new Error("Local");
-            return await vercelKv.ltrim(key, start, stop);
+            if (process.env.KV_REST_API_URL) {
+                return await vercelKv.ltrim(key, start, stop);
+            }
+            if (redisClient) {
+                return await redisClient.ltrim(key, start, stop);
+            }
+            return 'OK';
         } catch (e) {
             if (Array.isArray(memoryStore[key])) {
                 memoryStore[key] = memoryStore[key].slice(start, stop + 1);
@@ -96,18 +113,29 @@ export const kv = {
     },
     lrange: async (key: string, start: number, stop: number) => {
         try {
-            if (!process.env.KV_REST_API_URL) throw new Error("Local");
-            const res = await vercelKv.lrange(key, start, stop);
-            if (!res || res.length === 0) return (memoryStore[key] || []).slice(start, stop + 1);
-            return res;
+            if (process.env.KV_REST_API_URL) {
+                const res = await vercelKv.lrange(key, start, stop);
+                if (!res || res.length === 0) return (memoryStore[key] || []).slice(start, stop + 1);
+                return res;
+            }
+            if (redisClient) {
+                const res = await redisClient.lrange(key, start, stop);
+                return res.map(item => typeof item === 'string' ? JSON.parse(item) : item);
+            }
+            return (memoryStore[key] || []).slice(start, stop + 1);
         } catch (e) {
             return (memoryStore[key] || []).slice(start, stop + 1);
         }
     },
     incr: async (key: string) => {
         try {
-            if (!process.env.KV_REST_API_URL) throw new Error("Local");
-            return await vercelKv.incr(key);
+            if (process.env.KV_REST_API_URL) {
+                return await vercelKv.incr(key);
+            }
+            if (redisClient) {
+                return await redisClient.incr(key);
+            }
+            throw new Error("Local");
         } catch (e) {
             const val = (Number(memoryStore[key]) || 0) + 1;
             memoryStore[key] = val as any;
@@ -116,8 +144,13 @@ export const kv = {
     },
     incrby: async (key: string, value: number) => {
         try {
-            if (!process.env.KV_REST_API_URL) throw new Error("Local");
-            return await vercelKv.incrby(key, value);
+            if (process.env.KV_REST_API_URL) {
+                return await vercelKv.incrby(key, value);
+            }
+            if (redisClient) {
+                return await redisClient.incrby(key, value);
+            }
+            throw new Error("Local");
         } catch (e) {
             const val = (Number(memoryStore[key]) || 0) + value;
             memoryStore[key] = val as any;
@@ -126,10 +159,21 @@ export const kv = {
     },
     get: async <T = any>(key: string): Promise<T | null> => {
         try {
-            if (!process.env.KV_REST_API_URL) throw new Error("No KV URL");
-            const val = await vercelKv.get<T>(key);
-            if (val === null || val === undefined) return (memoryStore[key] as T) || null;
-            return val;
+            if (process.env.KV_REST_API_URL) {
+                const val = await vercelKv.get<T>(key);
+                if (val === null || val === undefined) return (memoryStore[key] as T) || null;
+                return val;
+            }
+            if (redisClient) {
+                const val = await redisClient.get(key);
+                if (val === null || val === undefined) return (memoryStore[key] as T) || null;
+                try {
+                    return JSON.parse(val) as T;
+                } catch {
+                    return val as any as T;
+                }
+            }
+            return (memoryStore[key] as T) || null;
         } catch (e) {
             return (memoryStore[key] as T) || null;
         }
