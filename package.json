@@ -6,7 +6,7 @@
     "dev": "concurrently -n web,server,wandb \"vite\" \"tsx api/server/index.ts\" \"python3 -u api/server/wandb_sidecar.py --server\"",
     "dev:server": "tsx watch api/server/index.ts",
     "dev:web": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && esbuild api/server/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=api/index.js --external:ioredis --external:@vercel/kv --external:weave --external:@google/generative-ai",
     "preview": "vite preview",
     "test": "npx tsx tests/run-all-tests.ts",
     "test:quick": "npx tsx scripts/quick-test.ts"
@@ -49,6 +49,7 @@
     "bc": "^0.1.1",
     "chalk": "^5.6.2",
     "concurrently": "^9.2.1",
+    "esbuild": "^0.27.3",
     "jest": "^30.2.0",
     "jq": "^1.7.2",
     "postcss": "^8.4.35",
