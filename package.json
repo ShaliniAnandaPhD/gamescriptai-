@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n web,server,wandb \"vite\" \"tsx server/index.ts\" \"python3 -u server/wandb_sidecar.py --server\"",
-    "dev:server": "tsx watch server/index.ts",
+    "dev": "concurrently -n web,server,wandb \"vite\" \"tsx api/server/index.ts\" \"python3 -u api/server/wandb_sidecar.py --server\"",
+    "dev:server": "tsx watch api/server/index.ts",
     "dev:web": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
@@ -43,6 +43,7 @@
     "@types/react-dom": "^18.2.19",
     "@types/react-plotly.js": "^2.6.4",
     "@types/uuid": "^10.0.0",
+    "@vercel/ncc": "^0.38.4",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.17",
     "bc": "^0.1.1",
