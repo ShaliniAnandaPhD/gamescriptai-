@@ -6,7 +6,17 @@ import Redis from 'ioredis';
 // Standard Redis client if needed
 let redisClient: Redis | null = null;
 if (process.env.REDIS_URL && !process.env.KV_REST_API_URL) {
-    redisClient = new Redis(process.env.REDIS_URL);
+    try {
+        console.log("🔌 Initializing Redis Client with REDIS_URL...");
+        redisClient = new Redis(process.env.REDIS_URL, {
+            connectTimeout: 5000,
+            maxRetriesPerRequest: 1
+        });
+        redisClient.on('error', (err) => console.error("❌ Redis Client Error:", err));
+        redisClient.on('connect', () => console.log("✅ Redis Connected"));
+    } catch (e) {
+        console.error("❌ Redis Initialization Failed:", e);
+    }
 }
 
 // Fallback for local development without Vercel KV

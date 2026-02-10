@@ -1380,7 +1380,17 @@ import weave from "weave";
 import Redis from "ioredis";
 var redisClient = null;
 if (process.env.REDIS_URL && !process.env.KV_REST_API_URL) {
-  redisClient = new Redis(process.env.REDIS_URL);
+  try {
+    console.log("\u{1F50C} Initializing Redis Client with REDIS_URL...");
+    redisClient = new Redis(process.env.REDIS_URL, {
+      connectTimeout: 5e3,
+      maxRetriesPerRequest: 1
+    });
+    redisClient.on("error", (err) => console.error("\u274C Redis Client Error:", err));
+    redisClient.on("connect", () => console.log("\u2705 Redis Connected"));
+  } catch (e) {
+    console.error("\u274C Redis Initialization Failed:", e);
+  }
 }
 var memoryStore = {
   total_episodes: 59,
