@@ -6,7 +6,7 @@
 
 GameScript AI is a sophisticated multi-agent system designed to autonomously generate, evaluate, and refine AI-generated content. Built on the **Neuron cognitive agent framework**, the system orchestrates content creation through a circuit of specialized agents, each with distinct capabilities and responsibilities.
 
-The pipeline operates as a **Neuron Circuit**, a directed graph of typed agents connected by a SynapticBus. Every stage (ingest, generate, evaluate, gate, learn) is a first-class agent with its own capabilities, memory access, and routing rules. A "True AI Profiling" layer captures ground-truth metrics from the Google Gemini API, enabling precise tracking of model performance, failure chains, and behavioral adaptations.
+The pipeline operates as a **Neuron Circuit**, a directed graph of typed agents connected by a SynapticBus. Every stage (ingest, generate, evaluate, gate, learn) is a first-class agent with its own capabilities, memory access, and routing rules. A "True AI Profiling" layer captures ground-truth metrics from the Google Gemini API, enabling precise tracking of model performance, failure chains, and behavioral adaptations. (Neuron GitHub: https://github.com/ShaliniAnandaPhD/Neuron)
 
 ### Key Highlights
 
