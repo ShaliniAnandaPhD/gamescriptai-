@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { v4 as uuidv4 } from 'uuid';
 import { kv as vercelKv } from '@vercel/kv';
 import weave from 'weave';

@@ -1375,6 +1375,7 @@ Return JSON:
 }
 
 // api/_server/lib/run-context.ts
+import "dotenv/config";
 import { kv as vercelKv } from "@vercel/kv";
 import weave from "weave";
 import Redis from "ioredis";
